@@ -39,10 +39,10 @@ public class WeatherServiceImpl implements WeatherService{
 	                    .queryParam("serviceKey", SERVICE_KEY)
 	                    .queryParam("numOfRows", 1000)
 	                    .queryParam("pageNo", 1)
-	                    .queryParam("base_date", baseDate)
+	                      .queryParam("base_date", baseDate)
 	                    .queryParam("base_time", baseTime)
 	                    .queryParam("nx", nx)
-	                    .queryParam("ny", ny)
+	                     .queryParam("ny", ny)
 	                    .queryParam("dataType", "XML")
 	                    .build(true); // true: 인코딩 안 함
 

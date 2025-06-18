@@ -211,7 +211,7 @@ transition: all 0.3s ease;
         
         <div class="day-icon"><div>${weather.day}</div><img src="resources/img/cloudy.png" class="weather-icon">
         <div>19/24</div><div>40%</div><div>3m/s</div></div>
-        
+         
         <div class="day-icon"><div>${weather.day}</div><img src="resources/img/windy.png" class="weather-icon">
         <div>17/23</div><div>10%</div><div>7m/s</div></div>
         

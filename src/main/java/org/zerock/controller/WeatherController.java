@@ -70,7 +70,7 @@ public class WeatherController {
     public String rainfallPage() {
         // temperature.jsp 같은 뷰 이름 리턴
         return "rainfall";
-    }
+    } 
     
     //날씨예 보 spi 사용하기 위한 맵핑 
   @Autowired
