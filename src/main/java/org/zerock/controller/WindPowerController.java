@@ -58,44 +58,7 @@ public class WindPowerController {
         return "windpower";
     }
     
-    
-    @GetMapping("/wind")
-    public String windData(Model model) {
-    	 List<WindPowerDTO> lastYearList = new ArrayList<>();
-         List<WindPowerDTO> thisYearPredictedList = new ArrayList<>();
-
-         try {
-             String baseUrl = "http://apis.data.go.kr/B551893/wind-power-by-hour/list";
-             int size = 100;
-             ObjectMapper mapper = new ObjectMapper();
-             RestTemplate restTemplate = new RestTemplate();
-             restTemplate.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
-
-             // 📌 전년도 데이터 (2023)
-             String startLast = "20230101";
-             String endLast = "20231231";
-             getWindData(baseUrl, startLast, endLast, size, restTemplate, mapper, lastYearList);
-
-             // 📌 올해 예측 데이터 (2024)
-             String startThis = "20240101";
-             String endThis = "20241231";
-             getWindData(baseUrl, startThis, endThis, size, restTemplate, mapper, thisYearPredictedList);
-
-         } catch (Exception e) {
-             e.printStackTrace();
-         }
-
-         // JSON 변환 후 전달
-         try {
-             ObjectMapper mapper = new ObjectMapper();
-             model.addAttribute("lastYearListJson", mapper.writeValueAsString(lastYearList));
-             model.addAttribute("thisYearPredictedListJson", mapper.writeValueAsString(thisYearPredictedList));
-         } catch (Exception e) {
-             e.printStackTrace();
-         }
-
-        return "simpleWind";
-    }
+ 
     
 
     private void getWindData(String baseUrl, String startD, String endD, int size,
@@ -118,6 +81,8 @@ public class WindPowerController {
             JsonNode bodyNode = rootNode.path("reponse").path("body");
             JsonNode contentArray = bodyNode.path("content");
 
+            System.out.println("📄 페이지: " + page + " / 받은 개수: " + contentArray.size());
+            
             if (contentArray.isArray()) {
                 for (JsonNode node : contentArray) {
                     WindPowerDTO dto = mapper.treeToValue(node, WindPowerDTO.class);
