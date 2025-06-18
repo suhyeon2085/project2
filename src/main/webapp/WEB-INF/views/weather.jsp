@@ -1,11 +1,10 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page isELIgnored="false" language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>날씨에 따라 다른 발전량</title>
-
 
 <style>
 
@@ -204,17 +203,32 @@ transition: all 0.3s ease;
   <!-- 우측 날씨예보 및 하단 정보 -->
   <div style="display: flex; flex-direction: column; flex: 1; gap: 3px; height: 600px;">
     <div id="weather">
+
       <div class="weather-title">주간 날씨 예보</div>
       <div class="weather-row">
-        <div class="day-icon"><div>일</div><img src="resources/img/sun.png" class="weather-icon"><div>21/26</div><div>70%</div><div>5m/s</div></div>
-        <div class="day-icon"><div>월</div><img src="resources/img/cloudy.png" class="weather-icon"><div>19/24</div><div>40%</div><div>3m/s</div></div>
-        <div class="day-icon"><div>화</div><img src="resources/img/windy.png" class="weather-icon"><div>17/23</div><div>10%</div><div>7m/s</div></div>
-        <div class="day-icon"><div>수</div><img src="resources/img/cloudy.png" class="weather-icon"><div>18/25</div><div>30%</div><div>4m/s</div></div>
-        <div class="day-icon"><div>목</div><img src="resources/img/cloudy.png" class="weather-icon"><div>20/27</div><div>20%</div><div>3m/s</div></div>
-        <div class="day-icon"><div>금</div><img src="resources/img/rainy.png" class="weather-icon"><div>22/28</div><div>90%</div><div>6m/s</div></div>
-        <div class="day-icon"><div>토</div><img src="resources/img/rainy.png" class="weather-icon"><div>23/29</div><div>80%</div><div>5m/s</div></div>
+        <div class="day-icon"><div>${weather.day}</div><img src="resources/img/sun.png" class="weather-icon">
+        <div>${weather.minTemp}°C/${weather.maxTemp}°C</div><div>${weather.precipitation}</div><div>${weather.windDirection}°</div></div>
+        
+        <div class="day-icon"><div>${weather.day}</div><img src="resources/img/cloudy.png" class="weather-icon">
+        <div>19/24</div><div>40%</div><div>3m/s</div></div>
+        
+        <div class="day-icon"><div>${weather.day}</div><img src="resources/img/windy.png" class="weather-icon">
+        <div>17/23</div><div>10%</div><div>7m/s</div></div>
+        
+        <div class="day-icon"><div>${weather.day}</div><img src="resources/img/cloudy.png" class="weather-icon">
+        <div>18/25</div><div>30%</div><div>4m/s</div></div>
+        
+        <div class="day-icon"><div>${weather.day}</div><img src="resources/img/cloudy.png" class="weather-icon">
+        <div>20/27</div><div>20%</div><div>3m/s</div></div>
+        
+        <div class="day-icon"><div>${weather.day}</div><img src="resources/img/rainy.png" class="weather-icon">
+        <div>22/28</div><div>90%</div><div>6m/s</div></div>
+        
+        <div class="day-icon"><div>${weather.day}</div><img src="resources/img/rainy.png" class="weather-icon">
+        <div>23/29</div><div>80%</div><div>5m/s</div></div>
       </div>
     </div>
+
 
     <!-- 발전량과 기상 요소 -->
     <div class="bottom-section">
@@ -228,6 +242,7 @@ transition: all 0.3s ease;
       
       <div class="right-info">
         <div class="info-box">오늘의 바람 (풍향)
+         <div>${weather.windSpeed}</div>
         <!-- 파이썬에서 받은 풍향 데이터 넣기  -->
         </div>
         <div class="info-box">오늘의 기압 (저/고)
@@ -236,7 +251,7 @@ transition: all 0.3s ease;
       </div>
       
     </div>
-  </div>
+</div>
 </div>
 
 <script src="http://dapi.kakao.com/v2/maps/sdk.js?appkey=e950db27bdab1260d20a67d4d89b7bbf&autoload=false"></script>

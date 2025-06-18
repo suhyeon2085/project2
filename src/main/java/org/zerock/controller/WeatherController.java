@@ -3,23 +3,27 @@ package org.zerock.controller;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 import org.zerock.domain.WeatherData;
+import org.zerock.service.WeatherService;
 
 @Controller
-public class weatherController {
+public class WeatherController {
 	
 	// 날씨 관련 페이지 연결 
-	@RequestMapping("/weather")
+	/*@RequestMapping("/weather")
 	public String main() {
 		return "weather";
 	}
-	 
+	*/
+	
 	//날씨와 상관관계 페이지 연결
     @GetMapping("/correlation")
     public String showCorrelationPage() {
@@ -68,9 +72,23 @@ public class weatherController {
         return "rainfall";
     }
     
+    //날씨예 보 spi 사용하기 위한 맵핑 
+  @Autowired
+    private WeatherService weatherService;
+     
+    @GetMapping("/weather")
+    public String showWeather(Model model) {
+        WeatherData weather = weatherService.getTodayWeather();
+        model.addAttribute("weather", weather);
+        return "weather";
+    }
+
+    
     // 지도 발전량 데이터 가져와야되고 
     
-    //주간 날씨 예보 ( 기온 최저,최고 / 강수량 / 풍속 )
+    // -이거때매 서블릿 안됐음 
+
+    
     
     // 봄 여름 가을 겨울 계절에 따라 다른 발전량 차이 그래프 가져오고 
     
