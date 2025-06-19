@@ -1,18 +1,30 @@
 package org.zerock.controller;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.zerock.domain.WeatherData;
-import org.zerock.service.WeatherService;
+//import org.zerock.service.WeatherService;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 public class WeatherController {
@@ -73,16 +85,61 @@ public class WeatherController {
     } 
     
     //날씨예 보 spi 사용하기 위한 맵핑 
-  @Autowired
-    private WeatherService weatherService;
-     
+
+    private final String SERVICE_KEY = "Xt2J5qiWMhBStQGBnIfZnX70IMyBPilFz%2FeQD2LhGZyAcW4M9W6gaqUKLSKLuPntOP9KrVT3SuVYmR%2Boo54PKw%3D%3D";
+    private final String API_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst";
+    
     @GetMapping("/weather")
     public String showWeather(Model model) {
-        WeatherData weather = weatherService.getTodayWeather();
-        model.addAttribute("weather", weather);
-        return "weather";
-    }
+    	List<WeatherData> weather = new ArrayList<>();
+    	try {
+        
+	        // 필요한 경우에만 인코딩
+	        //String encodedKey = URLEncoder.encode(SERVICE_KEY, StandardCharsets.UTF_8);
+    		
+	        String baseDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+	        String baseTime = "0500";
+	        String nx = "60";
+	        String ny = "127";
+	
+	        String url = API_URL
+	                + "?serviceKey=" + SERVICE_KEY
+	                + "&pageNo=1"
+	                + "&numOfRows=1000"
+	                + "&base_date=" + baseDate
+	                + "&base_time=" + baseTime
+	                + "&nx=" + nx
+	                + "&ny=" + ny
+	                + "&dataType=json";
+        
+	        System.out.println("요청 URL: " + url);
 
+	        URI uri = new URI(url);
+	        RestTemplate restTemplate = new RestTemplate();
+	        restTemplate.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+	        String response = restTemplate.getForObject(uri, String.class);
+	        System.out.println(response); // 한글 잘 나와야 함
+	
+	        ObjectMapper mapper = new ObjectMapper();
+	        JsonNode root = mapper.readTree(response);
+	        JsonNode items = root.path("response").path("body").path("items").path("item");
+	        System.out.println("items : "+items);
+	        if (items.isArray()) {
+	            for (JsonNode item : items) {
+	            	WeatherData dto = mapper.treeToValue(item, WeatherData.class);
+	            	weather.add(dto);
+	            }
+	        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        
+    }
+    model.addAttribute("weather", weather);
+    return "weather";	
+  	
+    }
+ 
     
     // 지도 발전량 데이터 가져와야되고 
     

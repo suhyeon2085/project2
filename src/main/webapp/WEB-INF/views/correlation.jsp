@@ -18,7 +18,7 @@ body {
 p {
 	color: white;
 	margin: 5px 10px;
-	font-size: 30px;
+	font-size: 40px;
 }
 
 /* 전체 레이아웃 */
@@ -38,7 +38,7 @@ p {
 	padding: 10px 0;
 	width: 70px;
 	flex-shrink: 0;
-	height: 570px;
+	height: 850px;
 	gap: 7px;
 }
 #title div {
@@ -69,7 +69,7 @@ p {
 /* 그래프 전체 영역 */
 #a {
 	background-color: #595959;
-	height: 570px;
+	height: 850px;
 	border-radius: 10px;
 	margin-left: 10px;
 	flex: 1;
@@ -86,7 +86,7 @@ p {
 .graph {
 	position: relative;
 	flex: 1;
-	height: 550px;
+	height: 830px;
 	background-color: #848484;
 	border-radius: 10px;
 	overflow: hidden;

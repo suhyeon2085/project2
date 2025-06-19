@@ -13,10 +13,12 @@ public class WeatherData {
 	private double power;
 	
     // WeatherDay 내용 필드 추가
-    private String day;            // 요일 혹은 날짜 (예: "월", "2025-06-17")
-    private String precipitation;  // 강수량 (%)
-    private String minTemperature; // 최저기온
-    private String maxTemperature; // 최고기온
-    private String windSpeed;      // 풍속 (m/s)
-    private String windDirection;  // 풍향 (예: 북동풍)
+    private String baseDate;            // 요일 혹은 날짜 (예: "월", "2025-06-17")
+    private String baseTime;  // 강수량 (%)
+    private String category; // 최저기온
+    private String fcstDate; // 최고기온
+    private String fcstTime;      // 풍속 (m/s)
+    private String fcstValue;  // 풍향 (예: 북동풍)
+    private int nx;  // 풍향 (예: 북동풍)
+    private int ny;  // 풍향 (예: 북동풍)
 }
