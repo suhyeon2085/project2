@@ -17,8 +17,8 @@ body {
 
 p {
 	color: white;
-	margin: 5px 10px;
-	font-size: 40px;
+	margin: 10px 20px;
+	font-size: 30px;
 }
 
 /* 전체 레이아웃 */

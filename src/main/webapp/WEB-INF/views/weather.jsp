@@ -20,14 +20,69 @@
         groupedWeather.putIfAbsent(formattedDate, new HashMap<>());
         groupedWeather.get(formattedDate).put(item.getCategory(), item.getFcstValue());
     }
+    
+    // 여기는 일 최저기온 기준 점이 '0600'이라 따로 잡고 설정 해줘야됌
+    for (WeatherData item : weatherList) {
+        if (!"0600".equals(item.getFcstTime())) continue;
 
-    // 오늘 날짜도 같은 형식으로 포맷팅
-    String todayRaw = "20250619";
+        String rawDate = item.getFcstDate(); 
+        Date parsedDate = inputFormat.parse(rawDate);
+        String formattedDate = outputFormat.format(parsedDate); 
+
+        groupedWeather.putIfAbsent(formattedDate, new HashMap<>());
+        groupedWeather.get(formattedDate).put(item.getCategory(), item.getFcstValue());
+    }
+    
+    
+    // 오늘 날짜도 같은 형식으로 포맷팅 - 풍향
+    String todayRaw = "20250620";
     Date todayParsed = inputFormat.parse(todayRaw);
     String todayFormatted = outputFormat.format(todayParsed);
     request.setAttribute("groupedWeather", groupedWeather);
     request.setAttribute("today", todayFormatted);
 %>
+
+<!-- 풍향 JSON  -->
+<%
+    String windVec = groupedWeather.getOrDefault(todayFormatted, new HashMap<>()).get("VEC");
+
+    String windDirectionStr = "풍향 없음";
+    String windDesc = "";
+    
+    if (windVec != null) {
+        int degree = Integer.parseInt(windVec);
+        if (degree >= 0 && degree < 22.5 || degree >= 337.5) {
+            windDirectionStr = "북풍";
+            windDesc = "차갑고 건조하며, 때로는 맑은 날씨를 가져오지만, 한파를 유발할 수도 있습니다. ";
+        } else if (degree >= 22.5 && degree < 67.5) {
+            windDirectionStr = "북동풍";
+            windDesc ="북동풍은 여름철 날씨에 큰 영향을 미치지 않습니다. ";
+        } else if (degree >= 67.5 && degree < 112.5) {
+            windDirectionStr = "동풍";
+            windDesc = "폭염을 완화시키기도 하지만, 더운 공기가 더 더워져서 폭염을 심화시킬 수 있습니다.";
+        } else if (degree >= 112.5 && degree < 157.5) {
+            windDirectionStr = "남동풍";
+            windDesc ="여름철에는 더위를 더욱 가중시키고, 비를 몰고 오는 경우가 있습니다.";
+        } else if (degree >= 157.5 && degree < 202.5) {
+            windDirectionStr = "남풍";
+            windDesc ="일반적으로 따뜻하고 습한 기운이며,<br> 저기압의 접근이나 태풍의 영향으로 비를 동반할 수 있습니다";
+        } else if (degree >= 202.5 && degree < 247.5) {
+            windDirectionStr = "남서풍";
+            windDesc ="무더위와 함께 집중 호우가 내리는 경우가 많습니다. ";
+        } else if (degree >= 247.5 && degree < 292.5) {
+            windDirectionStr = "서풍";
+            windDesc ="온대 저기압과 고기압을 동반하여 때로는 격렬한 뇌우를 일으킬 수 있습니다.";
+            windDirectionStr = "북서풍";
+            windDesc ="차갑고 건조한 가져와 황사나 미세먼지를 동반할 수 있습니다.";
+        }
+    }
+
+    request.setAttribute("windDesc", windDesc);
+    request.setAttribute("vecValue", windVec);
+    request.setAttribute("vecText", windDirectionStr);
+	
+%>
+
 
 <!DOCTYPE html>
 <html>
@@ -115,7 +170,14 @@
 	  color: white;
 	  font-size: 35px;
 	  font-weight: bold;
-	  margin: 10px 10px;
+	  margin: 10px 10px 0 10px;
+	}
+	
+	label{
+	margin: 10px 0px 0px 10px;
+	padding: 0px;
+	color: white;
+	font-size: 15px;
 	}
 	
 	.weather-row {
@@ -123,7 +185,7 @@
 	  flex-direction: row;
 	  gap: 20px;
 	  flex-wrap: nowrap;
-	  overflow-x: auto;
+	  overflow: hidden;
 	  padding: 10px;
 	}
 	
@@ -179,48 +241,125 @@
 	  height: 500px;
 	}
 	
+	/* 습도 css*/
+	#humidity {
+	  text-align: center;
+	  color: #222;
+	  font-family: 'Malgun Gothic', 'Segoe UI', sans-serif;
+	  border-radius: 10px;
+	  /* wave 스타일 추가 */
+	  width: 100%;
+	  height: 100%;
+	  background: linear-gradient(270deg, #00aaff, #004eff, #00aaff);
+	  background-size: 600% 610%;
+	  animation: waveMove 8s ease infinite;
+	}
+	
+	@keyframes waveMove {
+	  0% {background-position: 0% 50%;}
+	  50% {background-position: 100% 50%;}
+	  100% {background-position: 0% 50%;}
+	}
+
+
+	
 	/*여기서부터는 풍향 css*/
 	#winddirection {
 	  background-color: #F4F3F2;
 	  width: 100%;
 	  height: 100%;
 	  border-radius: 10px;
-	  padding: 5px;
-	  position: relative; /* 🔥 기준 위치 지정 */
+	  padding: 10px;
+	  text-align: center;
 	}
 	
-	#com {
-	  width: 200px;
-	  height: 200px;
-	  display: block;
-	  margin: 0 auto;
-	  position: relative; /* 배경 기준 유지 */
-	  z-index: 1;
+	.wind-title {
+	margin-top:5px;
+	  font-size: 25px;
+	  font-weight: bold;
+	  margin-bottom: 27px;
+	  color: #222;
 	}
 	
-	#arrow {
-	  width: 200px;
-	  height: 200px;
-	  position: absolute;
-	  top: 50%;
-	  left: 50%;
-	  transform: translate(-48%, -50%) rotate(0deg);
-	  transform-origin: center center;
-	  transition: transform 0.5s ease-in-out;
-	  z-index: 2;
-	  pointer-events: none;
+	.wind-row {
+	  display: flex;
+	  justify-content: center;
+	  align-items: center;
+	  gap: 30px;
+	}
+	
+	.wind-left, .wind-right {
+	  font-size: 45px;
+	  font-weight: bold;
+	  color: #333;
+	  font-family: 'Malgun Gothic', 'Segoe UI', sans-serif;
+	  margin-bottom: 7px;
 	}
 
-		
+	.wind-desc {
+	  font-size: 12px;
+	  color: #818181;
+	  margin-top: 8px;
+	  border-left: 3px solid #ccc;
+	  padding-left: 10px;
+	}
+
+	/* 이건 검색 */
+	header {
+	  padding: 10px 20px;
+	  background-color: transparent;
+	}
+	
+	.header-container {
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	}
+	
+	.header-container p {
+	  margin: 0;
+	  font-size: 30px;
+	  color: white;
+	  white-space: nowrap;
+	}
+	
+	
+	.custom-select {
+	  appearance: none;
+	  background-color: #333;
+	  color: #fff;
+	  border: 1px solid #666;
+	  border-radius: 6px;
+	  padding: 10px 40px 10px 15px;
+	  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+	  background-repeat: no-repeat;
+	  background-position: right 10px center;
+	  background-size: 30px;
+	}
+	
 </style>
 </head>
 
 <body>
-<header>
-  <p>날씨에 따라 다른 발전량 알아보기</p>
-</header>
+<!-- 계기판 게이지  -->
+<script src="https://bernii.github.io/gauge.js/dist/gauge.min.js"></script>
 
-<!-- 생략된 상단 JSP & 스타일은 그대로 유지하고, layout 부분만 수정합니다 -->
+<header>
+  <div class="header-container">
+    <p>날씨에 따라 다른 발전량 알아보기</p>
+
+	  <select class="custom-select">
+	  <option>지역선택</option>
+	  <option>울산</option>
+	  <option>인천</option>
+	  <option>제주도</option>
+	  <option>대전</option>
+	  <option>전라남도</option>
+	  </select>
+
+    </div>
+  </div>
+</header>
 
 <!-- 전체 레이아웃 -->
 <div style="display: flex; width: 100%; padding: 10px;">
@@ -244,6 +383,7 @@
       <!-- 날씨 예보 -->
       <div id="weather" style="flex: 2;">
         <div class="weather-title">일간 날씨 예보</div>
+        <label>당일 최저기온 ℃은 제공하지 않음</label>
         <div class="weather-row">
           <c:forEach items="${groupedWeather}" var="entry">
             <div class="day-icon">
@@ -259,7 +399,7 @@
 				      <img src="resources/img/rainy.png" class="weather-icon" />
 				    </c:otherwise>
 				  </c:choose>
-              <div> -- / ${entry.value.TMX}°C </div>
+              <div>  ${entry.value.TMN}°C / ${entry.value.TMX}°C </div>
               <div>강수확률: ${entry.value.POP}%</div>
               <div>풍속: ${entry.value.WSD} m/s</div>
             </div>
@@ -271,19 +411,31 @@
       <div class="right-info" style="flex: 1;">
         <div class="info-box">
         
-          <div id="winddirection" style="position: relative;">
-			  <div style="font-size: 25px; color: black; margin:5px;">
-			    풍향: ${groupedWeather[today].VEC}°
-			    <img src="resources/img/compass.png" id="com" />
-			    <img src="resources/img/arrow.png" id="arrow" />
-			  </div>
+	     <div id="winddirection">
+		  <div class="wind-title">오늘의 풍향</div>
+		  <div class="wind-row">
+		    <div class="wind-left">${groupedWeather[today].VEC}°</div>
+		    <div class="wind-right">${vecText}</div>
 		  </div>
+		  	    <span class="wind-desc">${windDesc}</span>
+		</div>
 
+
+		
         </div>
-        <div class="info-box">
-          오늘의 기압 (저/고)
-          <div><!-- 아직 데이터 안갖고옴 ㅋㅋ --></div>
-        </div>
+			<div class="info-box">
+			  <div id="humidity">
+			  
+			  
+			  
+			    <div style="font-size: 25px; font-weight: bold; padding-top: 17px;">오늘의 습도</div>
+			    <canvas id="humidityGauge" width="200" height="100"></canvas>
+			    <div id="humidityValue" style="margin-top:7px; font-size: 27px; font-weight: bold;">
+			      ${groupedWeather[today].REH}%
+			    </div>
+			  </div>
+			</div>
+			
       </div>
     </div>
 
@@ -299,23 +451,65 @@
 <!-- 카카오 지도 스크립트 -->
 <script src="http://dapi.kakao.com/v2/maps/sdk.js?appkey=e950db27bdab1260d20a67d4d89b7bbf&autoload=false"></script>
 <script>
-  kakao.maps.load(function () {
-    var mapContainer = document.getElementById('map');
-    var mapOption = {
-      center: new kakao.maps.LatLng(36.5, 127.8),
-      level: 13
-    };
-    var map = new kakao.maps.Map(mapContainer, mapOption);
-  });
+	//이건 지도 맵 
+	  kakao.maps.load(function () {
+	    var mapContainer = document.getElementById('map');
+	    var mapOption = {
+	      center: new kakao.maps.LatLng(36.5, 127.8),
+	      level: 13
+	    };
+	    var map = new kakao.maps.Map(mapContainer, mapOption);
+	  });
   
   
+	/* //이건 풍향 
+	const windDirectionDeg = parseInt("${groupedWeather[today].VEC}", 10);
+	const arrowImg = document.getElementById("arrow");
+	arrowImg.style.transform = `translate(-50%, -50%) rotate(${windDirectionDeg}deg)`;
+ */
+  
+  // 네비게이션 바 
+	function handleCityChange(city) {
+	  if (city) {
+	    // 선택된 도시로 이동하거나 필터링 동작 나중에 지역넣자
+	    window.location.href = `/weather?city=${city}`;
+	  }
+	}
+ 
+ 
+ // 습도 계기판 
+ window.onload = function() {
+	 var opts = {
+			  angle: 0, 			//반원 기울기
+			  lineWidth: 0.32,  	//반원 굴기
+			  radiusScale: 1,		//반원 전체 크기
+			  pointer: {
+			    length: 0.6,		//바늘 길이
+			    strokeWidth: 0.03,	// 바늘 굵기
+			    color: '#f4f3f2'	//바늘 색깔
+			  },
+			  limitMax: false,
+			  limitMin: false,
+			  colorStart: '#00aaff', 	//그라데이션 시작 색
+			  colorStop: '#0042ff', 	//그라데이션 끝 색
+			  strokeColor: '#d5f4ff',	//반원 배경 색
+			  generateGradient: true,	//그라데이션 사용 여부
+			  highDpiSupport: true,
+			};
+	    
+	    var target = document.getElementById('humidityGauge'); 
+	    var gauge = new Gauge(target).setOptions(opts);
+	    gauge.maxValue = 100;
+	    gauge.setMinValue(0);
+	    gauge.animationSpeed = 32;
+	    
+	    // JSP에서 넘어온 습도값을 JS 변수로 받아오기
+	    var humidityValue = parseInt('${groupedWeather[today].REH}');
+	    
+	    gauge.set(humidityValue);
+	  };
 
-  const windDirectionDeg = parseInt("${groupedWeather[today].VEC}", 10);
-  const arrowImg = document.getElementById("arrow");
-  arrowImg.style.transform = `translate(-50%, -50%) rotate(${windDirectionDeg}deg)`;
-
-  
 </script>
+
 </body>
 </html>
-했는데 왜 안먹지? VEC 값은 category 안에 있어
