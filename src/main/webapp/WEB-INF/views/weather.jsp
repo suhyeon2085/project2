@@ -4,83 +4,84 @@
 <%@ page import="java.util.*, java.text.SimpleDateFormat, org.zerock.domain.WeatherData" %>
 
 <%
-    List<WeatherData> weatherList = (List<WeatherData>) request.getAttribute("weather");
-    Map<String, Map<String, String>> groupedWeather = new TreeMap<>();
+// "0600" 과  "1500"이 필요해서 따로 리스트로 저장후 사용
+List<WeatherData> weatherList = (List<WeatherData>) request.getAttribute("weather");
 
-    SimpleDateFormat inputFormat = new SimpleDateFormat("yyyyMMdd");
-    SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd");
+Map<String, Map<String, String>> dayWeather1500 = new TreeMap<>();
+Map<String, Map<String, String>> dayWeather0600 = new TreeMap<>();
 
-    for (WeatherData item : weatherList) {
-        if (!"1500".equals(item.getFcstTime())) continue;
+SimpleDateFormat inputFormat = new SimpleDateFormat("yyyyMMdd");
+SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd");
 
-        String rawDate = item.getFcstDate(); // 예: "20250619"
-        Date parsedDate = inputFormat.parse(rawDate);
-        String formattedDate = outputFormat.format(parsedDate); // 예: "2025/06/19"
 
-        groupedWeather.putIfAbsent(formattedDate, new HashMap<>());
-        groupedWeather.get(formattedDate).put(item.getCategory(), item.getFcstValue());
+System.out.println(new com.google.gson.Gson().toJson(weatherList));
+
+for (WeatherData item : weatherList) {
+    String rawDate = item.getFcstDate();
+    Date parsedDate = inputFormat.parse(rawDate);
+    String formattedDate = outputFormat.format(parsedDate);
+
+    if ("1500".equals(item.getFcstTime())) {
+        dayWeather1500.putIfAbsent(formattedDate, new HashMap<>());
+        dayWeather1500.get(formattedDate).put(item.getCategory(), item.getFcstValue());
+    } else if ("0600".equals(item.getFcstTime()) && "TMN".equals(item.getCategory())) {
+        dayWeather0600.putIfAbsent(formattedDate, new HashMap<>());
+        dayWeather0600.get(formattedDate).put(item.getCategory(), item.getFcstValue());
     }
-    
-    // 여기는 일 최저기온 기준 점이 '0600'이라 따로 잡고 설정 해줘야됌
-    for (WeatherData item : weatherList) {
-        if (!"0600".equals(item.getFcstTime())) continue;
+}
 
-        String rawDate = item.getFcstDate(); 
-        Date parsedDate = inputFormat.parse(rawDate);
-        String formattedDate = outputFormat.format(parsedDate); 
+// 오늘 날짜 데이터 세팅
+String todayRaw = new SimpleDateFormat("yyyyMMdd").format(new Date());
+Date todayParsed = inputFormat.parse(todayRaw);
+String todayFormatted = outputFormat.format(todayParsed);
 
-        groupedWeather.putIfAbsent(formattedDate, new HashMap<>());
-        groupedWeather.get(formattedDate).put(item.getCategory(), item.getFcstValue());
+Map<String, String> todayData = dayWeather1500.get(todayFormatted);
+String todayREH = (todayData != null && todayData.get("REH") != null) ? todayData.get("REH") : "0";
+
+String windVec = dayWeather1500.getOrDefault(todayFormatted, new HashMap<>()).get("VEC");
+
+
+
+// 풍향 계산 
+String windDirectionStr = "풍향 없음";
+String windDesc = "";
+if (windVec != null) {
+    int degree = Integer.parseInt(windVec);
+    if (degree >= 0 && degree < 22.5 || degree >= 337.5) {
+        windDirectionStr = "북풍";
+        windDesc = "차갑고 건조하며, 때로는 맑은 날씨를 가져오지만, 한파를 유발할 수도 있습니다.";
+    } else if (degree >= 22.5 && degree < 67.5) {
+        windDirectionStr = "북동풍";
+        windDesc = "북동풍은 여름철 날씨에 큰 영향을 미치지 않습니다.";
+    } else if (degree >= 67.5 && degree < 112.5) {
+        windDirectionStr = "동풍";
+        windDesc = "폭염을 완화시키기도 하지만, 더운 공기가 더 더워져서 폭염을 심화시킬 수 있습니다.";
+    } else if (degree >= 112.5 && degree < 157.5) {
+        windDirectionStr = "남동풍";
+        windDesc = "여름철에는 더위를 더욱 가중시키고, 비를 몰고 오는 경우가 있습니다.";
+    } else if (degree >= 157.5 && degree < 202.5) {
+        windDirectionStr = "남풍";
+        windDesc = "따뜻하고 습한 기운이며, 저기압의 접근이나 태풍의 영향으로 비를 동반할 수 있습니다.";
+    } else if (degree >= 202.5 && degree < 247.5) {
+        windDirectionStr = "남서풍";
+        windDesc = "무더위와 함께 집중 호우가 내리는 경우가 많습니다.";
+    } else if (degree >= 247.5 && degree < 292.5) {
+        windDirectionStr = "서풍";
+        windDesc = "온대 저기압과 고기압을 동반하여 때로는 격렬한 뇌우를 일으킬 수 있습니다.";
+    } else {
+        windDirectionStr = "북서풍";
+        windDesc = "차갑고 건조한 공기를 가져와 황사나 미세먼지를 동반할 수 있습니다.";
     }
-    
-    
-    // 오늘 날짜도 같은 형식으로 포맷팅 - 풍향
-    String todayRaw = "20250620";
-    Date todayParsed = inputFormat.parse(todayRaw);
-    String todayFormatted = outputFormat.format(todayParsed);
-    request.setAttribute("groupedWeather", groupedWeather);
-    request.setAttribute("today", todayFormatted);
-%>
+}
 
-<!-- 풍향 JSON  -->
-<%
-    String windVec = groupedWeather.getOrDefault(todayFormatted, new HashMap<>()).get("VEC");
+request.setAttribute("dayWeather1500", dayWeather1500);
+request.setAttribute("dayWeather0600", dayWeather0600);
 
-    String windDirectionStr = "풍향 없음";
-    String windDesc = "";
-    
-    if (windVec != null) {
-        int degree = Integer.parseInt(windVec);
-        if (degree >= 0 && degree < 22.5 || degree >= 337.5) {
-            windDirectionStr = "북풍";
-            windDesc = "차갑고 건조하며, 때로는 맑은 날씨를 가져오지만, 한파를 유발할 수도 있습니다. ";
-        } else if (degree >= 22.5 && degree < 67.5) {
-            windDirectionStr = "북동풍";
-            windDesc ="북동풍은 여름철 날씨에 큰 영향을 미치지 않습니다. ";
-        } else if (degree >= 67.5 && degree < 112.5) {
-            windDirectionStr = "동풍";
-            windDesc = "폭염을 완화시키기도 하지만, 더운 공기가 더 더워져서 폭염을 심화시킬 수 있습니다.";
-        } else if (degree >= 112.5 && degree < 157.5) {
-            windDirectionStr = "남동풍";
-            windDesc ="여름철에는 더위를 더욱 가중시키고, 비를 몰고 오는 경우가 있습니다.";
-        } else if (degree >= 157.5 && degree < 202.5) {
-            windDirectionStr = "남풍";
-            windDesc ="일반적으로 따뜻하고 습한 기운이며,<br> 저기압의 접근이나 태풍의 영향으로 비를 동반할 수 있습니다";
-        } else if (degree >= 202.5 && degree < 247.5) {
-            windDirectionStr = "남서풍";
-            windDesc ="무더위와 함께 집중 호우가 내리는 경우가 많습니다. ";
-        } else if (degree >= 247.5 && degree < 292.5) {
-            windDirectionStr = "서풍";
-            windDesc ="온대 저기압과 고기압을 동반하여 때로는 격렬한 뇌우를 일으킬 수 있습니다.";
-            windDirectionStr = "북서풍";
-            windDesc ="차갑고 건조한 가져와 황사나 미세먼지를 동반할 수 있습니다.";
-        }
-    }
-
-    request.setAttribute("windDesc", windDesc);
-    request.setAttribute("vecValue", windVec);
-    request.setAttribute("vecText", windDirectionStr);
-	
+request.setAttribute("today", todayFormatted);
+request.setAttribute("todayREH", todayREH);
+request.setAttribute("vecText", windDirectionStr);
+request.setAttribute("windDesc", windDesc);
+request.setAttribute("todayVEC", windVec);
 %>
 
 
@@ -274,7 +275,7 @@
 	}
 	
 	.wind-title {
-	margin-top:5px;
+	  margin-top:5px;
 	  font-size: 25px;
 	  font-weight: bold;
 	  margin-bottom: 27px;
@@ -304,69 +305,134 @@
 	  padding-left: 10px;
 	}
 
-	/* 이건 검색 */
+
+	/* 검색 영역 스타일 */
 	header {
-	  padding: 10px 20px;
-	  background-color: transparent;
+	  position: relative;
+	  width: 100%;
 	}
 	
 	.header-container {
 	  display: flex;
 	  justify-content: space-between;
 	  align-items: center;
+	  position: relative;
 	}
 	
-	.header-container p {
-	  margin: 0;
-	  font-size: 30px;
+	.header-title {
 	  color: white;
-	  white-space: nowrap;
+	  margin: 10px 20px;
+	  font-size: 30px;
+	}
+	
+	.search-box {
+	  position: relative;
+	  width: 220px;
+	  margin-right: 15px;
+	}
+	
+	.custom-input {
+	  width: 100%;
+	  padding: 10px 40px 10px 10px; /* 오른쪽에 아이콘 공간 확보 */
+	  font-size: 16px;
+	  background-color: #F4F3F2;
+	  border: 1px solid #ccc;
+	  border-radius: 4px;
+	}
+	
+	.search-icon {
+	  position: absolute;
+	  top: 50%;
+	  right: 10px;
+	  transform: translateY(-50%);
+	  cursor: pointer;
+	  font-size: 20px;
+	  color: #595959;
+	  user-select: none;
+	  transition: color 0.3s ease;
+	}
+	
+	.search-icon:hover,
+	.search-icon:focus {
+	  color: #6799FF;
+	  outline: none;
 	}
 	
 	
-	.custom-select {
-	  appearance: none;
-	  background-color: #333;
-	  color: #fff;
-	  border: 1px solid #666;
-	  border-radius: 6px;
-	  padding: 10px 40px 10px 15px;
-	  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
-	  background-repeat: no-repeat;
-	  background-position: right 10px center;
-	  background-size: 30px;
+	.suggestions-list {
+	  list-style: none;
+	  padding: 0;
+	  margin: 0;
+	  width: 100%;
+	  max-height: 150px;
+	  overflow-y: auto;
+	  background: white;
+	  position: absolute;
+	  top: 100%;
+	  left: 0;
+	  z-index: 1000;
+	  border: none;
 	}
 	
+	.suggestions-list li {
+	  padding: 10px;
+	  cursor: pointer;
+	  border-radius: 4px;
+	}
+	
+	.suggestions-list li:hover {
+	  background-color: #f0f0f0;
+	}
+	
+	.search-icon i {
+	  color: #595959;    
+	  font-size: 20px;     
+	  cursor: pointer;     
+	  transition: color 0.3s ease, transform 0.3s ease;
+	}
+	
+	.search-icon:hover i {
+	  color: #6799FF;   
+	  transform: scale(1.1);
+	}
+	
+
 </style>
 </head>
 
 <body>
 <!-- 계기판 게이지  -->
 <script src="https://bernii.github.io/gauge.js/dist/gauge.min.js"></script>
+<link
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  rel="stylesheet"
+/>
 
 <header>
   <div class="header-container">
-    <p>날씨에 따라 다른 발전량 알아보기</p>
+    <p class="header-title">날씨에 따라 다른 발전량 알아보기</p>
 
-	  <select class="custom-select">
-	  <option>지역선택</option>
-	  <option>울산</option>
-	  <option>인천</option>
-	  <option>제주도</option>
-	  <option>대전</option>
-	  <option>전라남도</option>
-	  </select>
+		<div class="search-box">
+		  <input type="text" id="searchInput" class="custom-input" placeholder="검색어 입력" autocomplete="off" />
+		  <span id="searchIcon" class="search-icon" role="button" tabindex="0" aria-label="검색">
+		  <i class="fas fa-search"></i>
+		</span>
 
-    </div>
+		  <ul class="suggestions-list" id="suggestions"></ul>
+		</div>
+
+    
   </div>
 </header>
+
+
 
 <!-- 전체 레이아웃 -->
 <div style="display: flex; width: 100%; padding: 10px;">
   <!-- 좌측: 메뉴 -->
   <div id="title">
     <div><a href="weather"><img src="resources/img/weather.png" alt="현재 목록"></a></div>
-    <div><img src="resources/img/power.png" alt="이전 목록"></div>
+    <div><a href="windpower"><img src="resources/img/power.png" alt="이전 목록"></a></div>
     <div><a href="correlation"><img src="resources/img/correlation.png" alt="상관관계 그래프 목록"></a></div>
   </div>
 
@@ -385,7 +451,7 @@
         <div class="weather-title">일간 날씨 예보</div>
         <label>당일 최저기온 ℃은 제공하지 않음</label>
         <div class="weather-row">
-          <c:forEach items="${groupedWeather}" var="entry">
+          <c:forEach items="${dayWeather1500}" var="entry">
             <div class="day-icon">
               <div>${entry.key}</div>
               <c:choose>
@@ -399,10 +465,13 @@
 				      <img src="resources/img/rainy.png" class="weather-icon" />
 				    </c:otherwise>
 				  </c:choose>
-              <div>  ${entry.value.TMN}°C / ${entry.value.TMX}°C </div>
-              <div>강수확률: ${entry.value.POP}%</div>
-              <div>풍속: ${entry.value.WSD} m/s</div>
-            </div>
+           <div>
+        <c:out value="${dayWeather0600[entry.key].TMN}" default="0" />°C /
+        <c:out value="${entry.value.TMX}" default="N/A" />°C
+      </div>
+      <div>강수량: ${entry.value.POP}%</div>
+      <div>풍속: ${entry.value.WSD} m/s</div>
+    </div>
           </c:forEach>
         </div>
       </div>
@@ -414,24 +483,22 @@
 	     <div id="winddirection">
 		  <div class="wind-title">오늘의 풍향</div>
 		  <div class="wind-row">
-		    <div class="wind-left">${groupedWeather[today].VEC}°</div>
+		    <div class="wind-left">${todayVEC}°</div>
 		    <div class="wind-right">${vecText}</div>
 		  </div>
 		  	    <span class="wind-desc">${windDesc}</span>
 		</div>
-
-
+	
+	
 		
         </div>
 			<div class="info-box">
 			  <div id="humidity">
 			  
-			  
-			  
 			    <div style="font-size: 25px; font-weight: bold; padding-top: 17px;">오늘의 습도</div>
 			    <canvas id="humidityGauge" width="200" height="100"></canvas>
 			    <div id="humidityValue" style="margin-top:7px; font-size: 27px; font-weight: bold;">
-			      ${groupedWeather[today].REH}%
+			        ${todayREH}%
 			    </div>
 			  </div>
 			</div>
@@ -451,6 +518,7 @@
 <!-- 카카오 지도 스크립트 -->
 <script src="http://dapi.kakao.com/v2/maps/sdk.js?appkey=e950db27bdab1260d20a67d4d89b7bbf&autoload=false"></script>
 <script>
+
 	//이건 지도 맵 
 	  kakao.maps.load(function () {
 	    var mapContainer = document.getElementById('map');
@@ -461,12 +529,7 @@
 	    var map = new kakao.maps.Map(mapContainer, mapOption);
 	  });
   
-  
-	/* //이건 풍향 
-	const windDirectionDeg = parseInt("${groupedWeather[today].VEC}", 10);
-	const arrowImg = document.getElementById("arrow");
-	arrowImg.style.transform = `translate(-50%, -50%) rotate(${windDirectionDeg}deg)`;
- */
+
   
   // 네비게이션 바 
 	function handleCityChange(city) {
@@ -504,10 +567,53 @@
 	    gauge.animationSpeed = 32;
 	    
 	    // JSP에서 넘어온 습도값을 JS 변수로 받아오기
-	    var humidityValue = parseInt('${groupedWeather[today].REH}');
+	   var humidityValue = parseInt('${todayREH}');
+
 	    
 	    gauge.set(humidityValue);
 	  };
+	  
+	  
+	  // 검색칸 자동완성
+	const locations = ["울산", "인천", "제주도", "대전", "전라남도"];
+	const input = document.getElementById("searchInput");
+	const suggestions = document.getElementById("suggestions");
+	
+	input.addEventListener("input", () => {
+	  const value = input.value.trim().toLowerCase();
+	  suggestions.innerHTML = "";
+	
+	  if (value) {
+	    const filtered = locations.filter(location =>
+	      location.toLowerCase().includes(value)
+	    );
+	
+	    if (filtered.length > 0) {
+	      suggestions.style.display = "block"; // 리스트 보이게
+	      filtered.forEach(location => {
+	        const li = document.createElement("li");
+	        li.textContent = location;
+	        li.addEventListener("click", () => {
+	          input.value = location;
+	          suggestions.innerHTML = "";
+	          suggestions.style.display = "none"; // 선택시 숨기기
+	        });
+	        suggestions.appendChild(li);
+	      });
+	    } else {
+	      suggestions.style.display = "none"; // 필터 없으면 숨기기
+	    }
+	  } else {
+	    suggestions.style.display = "none"; // 입력 없으면 숨기기
+	  }
+	});
+	
+	document.addEventListener("click", (e) => {
+	  if (!e.target.closest(".search-box")) {
+	    suggestions.innerHTML = "";
+	    suggestions.style.display = "none";
+	  }
+	});
 
 </script>
 
