@@ -27,6 +27,13 @@
 				 </exclusion>
 			</exclusions>
 		</dependency>
+		
+		<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-dbcp2</artifactId>
+    <version>2.9.0</version> <!-- 또는 최신 버전 -->
+</dependency>
+		
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
