@@ -104,7 +104,7 @@ p{
 	</div>
 	
 	
-	<!-- 기온 발전량 그래프 -->
+	<!-- 기온 발전량 그래프 --> 
 	<div id="sun">
 		<div style="display: flex; justify-content: space-between; align-items: center;">
 		  <p style="margin: 0;">기온과 발전량 그래프</p>

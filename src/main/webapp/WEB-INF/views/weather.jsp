@@ -12,7 +12,7 @@ Map<String, Map<String, String>> dayWeather0600 = new TreeMap<>();
 
 SimpleDateFormat inputFormat = new SimpleDateFormat("yyyyMMdd");
 SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd");
-
+ 
 
 System.out.println(new com.google.gson.Gson().toJson(weatherList));
 
