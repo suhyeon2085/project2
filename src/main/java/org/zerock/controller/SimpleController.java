@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import org.zerock.domain.WindPowerDTO;
 import org.zerock.service.WindDataService;
 
+import java.io.File;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.YearMonth;
@@ -24,7 +25,7 @@ import java.util.*;
 @Controller
 public class SimpleController {
 
-    private static final String SERVICE_KEY = "pFpj66B8XNos%2BA5g9TNorwHplOXQg%2B8zsBrvx8a%2BmeW%2BneNcPdkDPcp1WC3GP%2BhsjjuCzOexumuYap2jc28bBw%3D%3D";
+    private static final String SERVICE_KEY = "mDVorOQEDqA1SXNJGLkjLJopGy6qMzS4hFScPO6NZ5T6K5yUvp9ZdZK%2BHU9h%2FQzdJC%2FUpxUi26Yg4xJh3m72JQ%3D%3D";
     private static final String BASE_URL = "https://apis.data.go.kr/B551893/wind-power-by-hour/list";
 
     @Autowired
@@ -305,9 +306,24 @@ public class SimpleController {
     @ResponseBody
     public String loadJsonAndSaveToDb() {
         try {
-            List<WindPowerDTO> list = windDataService.loadWindDataFromJsonFile("C:/wind_data/wind_data_20220101_20250531.json");
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(new File("C:/wind_data/wind_data_20220101_20250531.json"));
+
+            JsonNode contentArray = root.path("reponse").path("body").path("content");
+            List<WindPowerDTO> list = new ArrayList<>();
+
+            if (contentArray.isArray()) {
+                for (JsonNode item : contentArray) {
+                    WindPowerDTO dto = mapper.treeToValue(item, WindPowerDTO.class);
+                    list.add(dto);
+                }
+            }
+
+            // ✅ MyBatis로 저장
             windDataService.saveAll(list);
+
             return "✅ DB 저장 완료: " + list.size() + "건";
+
         } catch (Exception e) {
             log.error("DB 저장 실패", e);
             return "❌ 오류 발생: " + e.getMessage();
