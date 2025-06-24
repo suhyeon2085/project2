@@ -15,7 +15,7 @@ body {
 	font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
 }
 
-p { 
+p {  
 	color: white;
 	margin: 10px 20px;
 	font-size: 30px;

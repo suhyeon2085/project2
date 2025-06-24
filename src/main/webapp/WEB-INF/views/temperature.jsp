@@ -103,7 +103,7 @@ p{
 		<div><a href="correlation"><img src="resources/img/correlation.png" alt="상관관계 그래프 목록"></a></div>
 	</div>
 	
-	 
+	  
 	<!-- 기온 발전량 그래프 --> 
 	<div id="sun">
 		<div style="display: flex; justify-content: space-between; align-items: center;">
