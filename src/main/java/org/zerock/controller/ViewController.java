@@ -24,19 +24,19 @@ public class ViewController {
         ObjectMapper mapper = new ObjectMapper();
 
         // 영흥풍력1호기
-        model.addAttribute("list_9997", mapper.writeValueAsString(body.get("list_9997")));
-        model.addAttribute("pred_9997", mapper.writeValueAsString(body.get("pred_9997")));
-        model.addAttribute("aver_9997", mapper.writeValueAsString(body.get("aver_9997")));
+        model.addAttribute("list_9997", body.get("list_9997"));
+        model.addAttribute("pred_9997", body.get("pred_9997"));
+        model.addAttribute("aver_9997", body.get("aver_9997"));
 
         // 영흥풍력2호기
-        model.addAttribute("list_9998", mapper.writeValueAsString(body.get("list_9998")));
-        model.addAttribute("pred_9998", mapper.writeValueAsString(body.get("pred_9998")));
-        model.addAttribute("aver_9998", mapper.writeValueAsString(body.get("aver_9998")));
+        model.addAttribute("list_9998", body.get("list_9998"));
+        model.addAttribute("pred_9998", body.get("pred_9998"));
+        model.addAttribute("aver_9998", body.get("aver_9998"));
 
         // 군위화산풍력
-        model.addAttribute("list_D001", mapper.writeValueAsString(body.get("list_D001")));
-        model.addAttribute("pred_D001", mapper.writeValueAsString(body.get("pred_D001")));
-        model.addAttribute("aver_D001", mapper.writeValueAsString(body.get("aver_D001")));
+        model.addAttribute("list_D001", body.get("list_D001"));
+        model.addAttribute("pred_D001", body.get("pred_D001"));
+        model.addAttribute("aver_D001", body.get("aver_D001"));
 
         return "powerChart"; // /WEB-INF/views/powerChart.jsp
     }

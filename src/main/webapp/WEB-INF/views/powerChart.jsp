@@ -1,157 +1,259 @@
-<%@ page contentType="text/html; charset=UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <html>
 <head>
-    <title>발전량 예측 대시보드</title>
+    <title>풍력 발전량 비교 대시보드</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', 'Noto Sans KR', sans-serif;
-            background-color: #f5f8fa;
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
             margin: 0;
-            padding: 40px;
+            padding: 20px 30px;
+            background-color: #474747;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         h2 {
-            text-align: center;
-            color: #222;
             font-size: 28px;
-            margin-bottom: 30px;
-        }
-        .selector-container {
+            font-weight: bold;
+            margin-bottom: 20px;
             text-align: center;
-            margin-bottom: 30px;
+            color: #eee;
+            user-select: none;
         }
-        select {
-            padding: 10px 16px;
+        .btn-group {
+            margin: 0 auto 40px auto;
+            text-align: center;
+            width: fit-content;
+            display: flex;
+            gap: 15px;
+        }
+        .btn-group button {
+            padding: 12px 25px;
+            cursor: pointer;
+            background-color: #595959;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
             font-size: 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            user-select: none;
+        }
+        .btn-group button:hover {
+            background-color: #6799FF;
+            transform: translateY(-3px);
         }
         .chart-container {
-            background: white;
-            padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-            width: 80%;
-            max-width: 900px;
-            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 25px;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto; /* 가운데 정렬 */
+            height: 700px;
+            box-sizing: border-box;
+        }
+        .chart-box {
+            background-color: #595959;
+            border-radius: 10px;
+            padding: 25px 20px 20px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            color: white;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .line-chart {
+            flex: 2 2 0;
+            max-width: 70%;
+            min-width: 65%;
+            height: 100%;
+        }
+        .side-charts {
+            flex: 1 1 0;
+            max-width: 30%;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            height: 100%;
+        }
+        .small-chart {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-box h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 20px;
+            color: #e3e3e3;
+            user-select: none;
         }
         canvas {
+            flex-grow: 1;
             width: 100% !important;
-            height: auto !important;
+            height: 100% !important;
+            border-radius: 8px;
+            background-color: #404040;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
+            user-select: none;
         }
     </style>
 </head>
 <body>
+    <h2>풍력 발전량 비교 대시보드</h2>
 
-<h2>📈 연도별 발전량 (3개 발전소 합산) vs 과거 평균 합산</h2>
+    <div class="btn-group">
+        <button onclick="updateAllCharts('2022')">2022년</button>
+        <button onclick="updateAllCharts('2023')">2023년</button>
+        <button onclick="updateAllCharts('2024')">2024년</button>
+        <button onclick="updateAllCharts('2025')">2025년 (예측)</button>
+    </div>
 
-<div class="selector-container">
-    <label for="yearSelector">연도 선택: </label>
-    <select id="yearSelector" onchange="updateChart()">
-        <option value="2022">2022</option>
-        <option value="2023">2023</option>
-        <option value="2024">2024</option>
-        <option value="2025">2025</option>
-    </select>
-</div>
+    <div class="chart-container">
+        <div class="chart-box line-chart">
+            <h3>연도별 발전량 (3개 발전소 합산) vs 고정 평균값 (월별)</h3>
+            <canvas id="lineChart"></canvas>
+        </div>
 
-<div class="chart-container">
-    <canvas id="powerChart"></canvas>
-</div>
+        <div class="side-charts">
+            <div class="chart-box small-chart">
+                <h3>발전소별 월별 발전량 (막대그래프)</h3>
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="chart-box small-chart">
+                <h3>발전소별 발전량 추이 (라인그래프)</h3>
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
 
 <script>
-    const list_9997 = JSON.parse('${list_9997}');
-    const list_9998 = JSON.parse('${list_9998}');
-    const list_D001 = JSON.parse('${list_D001}');
-    const pred_9997 = JSON.parse('${pred_9997}');
-    const pred_9998 = JSON.parse('${pred_9998}');
-    const pred_D001 = JSON.parse('${pred_D001}');
-    const aver_9997 = JSON.parse('${aver_9997}');
-    const aver_9998 = JSON.parse('${aver_9998}');
-    const aver_D001 = JSON.parse('${aver_D001}');
+    // JSP에서 전달된 JSON 문자열을 JS 배열로 파싱
+    const list_9997 = ${list_9997};
+    const list_9998 = ${list_9998};
+    const list_D001 = ${list_D001};
+
+    const pred_9997 = ${pred_9997};
+    const pred_9998 = ${pred_9998};
+    const pred_D001 = ${pred_D001};
+
+    const aver_9997 = ${aver_9997};
+    const aver_9998 = ${aver_9998};
+    const aver_D001 = ${aver_D001};
 
     const labels = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
 
-    // 3개 발전소 데이터를 연도별로 슬라이스 및 합산 함수
-    function sumMonthlyData(year) {
-        // 1년 데이터 12개월 = 12개 데이터, list 데이터 배열 전체 월 수에 따라 인덱스 조정 필요
-        // 2022년 ~ 2024년은 슬라이스 인덱스, 2025년은 pred 배열 그대로 사용
+    const yearIndexMap = {
+        "2022": [84, 96],
+        "2023": [96, 108],
+        "2024": [108, 120]
+    };
 
-        // slice 인덱스: 2022 -> 84~95, 2023 -> 96~107, 2024 -> 108~119 (0부터 시작)
-        const yearIndexMap = {
-            "2022": [84, 96],
-            "2023": [96, 108],
-            "2024": [108, 120]
-        };
-
+    // 첫번째 그래프용: 3개 발전소 월별 합산 (실적/예측)
+    function getSummedMonthlyData(year) {
         let data9997, data9998, dataD001;
-
-        if(year === "2025") {
+        if (year === '2025') {
             data9997 = pred_9997;
             data9998 = pred_9998;
             dataD001 = pred_D001;
-        } else {
-            let [start, end] = yearIndexMap[year];
+        } else if (yearIndexMap.hasOwnProperty(year)) {
+            const [start, end] = yearIndexMap[year];
             data9997 = list_9997.slice(start, end);
             data9998 = list_9998.slice(start, end);
             dataD001 = list_D001.slice(start, end);
+        } else {
+            data9997 = [];
+            data9998 = [];
+            dataD001 = [];
         }
 
-        // 3개 발전소 월별 합산 배열 생성
+        // 숫자 변환 및 합산
         const summed = [];
-        for(let i=0; i<12; i++) {
-            const val9997 = Number(data9997[i]) || 0;
-            const val9998 = Number(data9998[i]) || 0;
-            const valD001 = Number(dataD001[i]) || 0;
-            summed.push(val9997 + val9998 + valD001);
+        for(let i=0; i<12; i++){
+            summed[i] = (Number(data9997[i])||0) + (Number(data9998[i])||0) + (Number(dataD001[i])||0);
         }
         return summed;
     }
 
-    // 3개 발전소 평균 발전량 합산 (고정)
-    const avgSum = [];
-    for(let i=0; i<12; i++) {
-        avgSum[i] = (Number(aver_9997[i]) || 0) + (Number(aver_9998[i]) || 0) + (Number(aver_D001[i]) || 0);
+    // 고정 평균값 (3개 발전소 월별 합산)
+    function getFixedAverageSum() {
+        const avgArr = [];
+        for(let i=0; i<12; i++){
+            avgArr[i] = (Number(aver_9997[i])||0) + (Number(aver_9998[i])||0) + (Number(aver_D001[i])||0);
+        }
+        return avgArr;
     }
 
-    let chart;
+    // 두번째 그래프용: 발전소별 월별 데이터 (실적/예측)
+    // year -> 월별 데이터 배열 리턴 (배열 길이 12)
+    function getMonthlyDataByPlant(year) {
+        let data9997, data9998, dataD001;
+        if (year === '2025') {
+            data9997 = pred_9997;
+            data9998 = pred_9998;
+            dataD001 = pred_D001;
+        } else if (yearIndexMap.hasOwnProperty(year)) {
+            const [start, end] = yearIndexMap[year];
+            data9997 = list_9997.slice(start, end);
+            data9998 = list_9998.slice(start, end);
+            dataD001 = list_D001.slice(start, end);
+        } else {
+            data9997 = [];
+            data9998 = [];
+            dataD001 = [];
+        }
 
-    function updateChart() {
-        const year = document.getElementById("yearSelector").value;
-        const summedData = sumMonthlyData(year);
+        // 숫자 변환 보장
+        data9997 = data9997.map(x => Number(x) || 0);
+        data9998 = data9998.map(x => Number(x) || 0);
+        dataD001 = dataD001.map(x => Number(x) || 0);
 
-        chart.data.datasets[0].data = summedData;
-        chart.data.datasets[0].label = `${year}년 3개 발전소 합산 발전량`;
-
-        chart.data.datasets[1].data = avgSum;
-        chart.data.datasets[1].label = `2015~2024년 3개 발전소 평균 발전량 합산`;
-
-        chart.options.plugins.title.text = `${year}년 발전량 vs 평균 발전량 (3개 발전소 합산)`;
-        chart.update();
+        return { data9997, data9998, dataD001 };
     }
 
-    window.onload = function () {
-        const ctx = document.getElementById('powerChart').getContext('2d');
-        chart = new Chart(ctx, {
+    // 세번째 그래프용: 발전소별 월별 추이(라인그래프) (실적/예측)
+    // 여기서는 같은 데이터 배열을 활용함(추세는 월별 발전량 시계열)
+    // 만약 필요시 가공 추가 가능
+
+    // 차트 객체 전역 변수
+    let lineChart, barChart, trendChart;
+
+    function updateAllCharts(year) {
+        // 1. 첫번째 그래프 업데이트
+        const summedData = getSummedMonthlyData(year);
+        const fixedAvgData = getFixedAverageSum();
+
+        if(lineChart) lineChart.destroy();
+
+        const ctxLine = document.getElementById('lineChart').getContext('2d');
+        lineChart = new Chart(ctxLine, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: "연도별 발전량",
-                        data: [],
-                        borderColor: 'blue',
-                        backgroundColor: 'rgba(0, 0, 255, 0.1)',
-                        tension: 0.3
+                        label: `${year}년 발전량 (3개 발전소 합산)`,
+                        data: summedData,
+                        borderColor: 'lime',
+                        backgroundColor: 'rgba(50,205,50,0.3)',
+                        tension: 0.3,
+                        fill: true,
                     },
                     {
-                        label: "평균 발전량",
-                        data: [],
-                        borderColor: 'red',
-                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
-                        borderDash: [5, 5],
-                        tension: 0.3
+                        label: '고정 평균값 (월별 총합 평균)',
+                        data: fixedAvgData,
+                        borderColor: 'orange',
+                        borderDash: [6, 6],
+                        tension: 0,
+                        fill: false,
+                        pointRadius: 0,
                     }
                 ]
             },
@@ -160,27 +262,155 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: '발전량 예측',
-                        font: { size: 18 }
+                        text: `${year}년 발전량 vs 고정 평균값`,
+                        color: 'white',
+                        font: {size: 18}
                     },
                     legend: {
-                        position: 'top'
+                        position: 'top',
+                        labels: {color: 'white'}
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} MW`
+                        }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: '발전량 (단위)'
-                        }
+                        title: {display:true, text:'발전량 (MW)', color: 'white'},
+                        ticks: {color: 'white'}
+                    },
+                    x: {
+                        title: {display:true, text:'월', color: 'white'},
+                        ticks: {color: 'white'}
                     }
                 }
             }
         });
 
-        updateChart(); // 초기 차트 그리기
-    };
+        // 2. 두번째 그래프 업데이트 (발전소별 월별 막대그래프)
+        const plantData = getMonthlyDataByPlant(year);
+
+        if(barChart) barChart.destroy();
+
+        const ctxBar = document.getElementById('barChart').getContext('2d');
+        barChart = new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '영흥풍력1호기',
+                        data: plantData.data9997,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                    },
+                    {
+                        label: '영흥풍력2호기',
+                        data: plantData.data9998,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                    },
+                    {
+                        label: '군위화산풍력',
+                        data: plantData.dataD001,
+                        backgroundColor: 'rgba(255, 206, 86, 0.7)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {color: 'white'}
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} MW`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {display:true, text:'발전량 (MW)', color: 'white'},
+                        ticks: {color: 'white'}
+                    },
+                    x: {
+                        title: {display:true, text:'월', color: 'white'},
+                        ticks: {color: 'white'}
+                    }
+                }
+            }
+        });
+
+        // 3. 세번째 그래프 업데이트 (발전소별 월별 추이 - 라인차트)
+        // 두번째 그래프와 동일 데이터, 라인차트로 표현
+        if(trendChart) trendChart.destroy();
+
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        trendChart = new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '영흥풍력1호기 추이',
+                        data: plantData.data9997,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.3)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: '영흥풍력2호기 추이',
+                        data: plantData.data9998,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: '군위화산풍력 추이',
+                        data: plantData.dataD001,
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        backgroundColor: 'rgba(255, 206, 86, 0.3)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {color: 'white'}
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} MW`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {display:true, text:'발전량 (MW)', color: 'white'},
+                        ticks: {color: 'white'}
+                    },
+                    x: {
+                        title: {display:true, text:'월', color: 'white'},
+                        ticks: {color: 'white'}
+                    }
+                }
+            }
+        });
+    }
+
+    // 초기 로딩 시 2022년 데이터 표시
+    updateAllCharts('2022');
 </script>
 
 </body>
