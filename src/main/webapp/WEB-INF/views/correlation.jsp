@@ -8,7 +8,7 @@
 <style> 
 * { box-sizing: border-box; }
 
-body {
+body { 
 	margin: 0;
 	padding: 0;
 	background-color: #474747;

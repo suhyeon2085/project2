@@ -94,7 +94,7 @@ p{
     color: #444444;          
 }
 
-</style>
+</style> 
 </head>
 <body>
 	<div id="title">
@@ -110,7 +110,7 @@ p{
 		  <p style="margin: 0;">기온과 발전량 그래프</p>
 		  <a href="windspeed" class="button-3d">풍향 바로가기</a>
 		</div>
-
+ 
 	
 	<div>기온과 발전량의 상관관계 그래프? 표? 차트</div>
 	
