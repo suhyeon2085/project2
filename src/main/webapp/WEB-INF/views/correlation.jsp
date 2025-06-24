@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <title>날씨와 상관관계 나타내는 그래프</title>
-<style>
+<style> 
 * { box-sizing: border-box; }
 
 body {
