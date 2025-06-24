@@ -172,13 +172,7 @@ a {
 			<div>풍속 - 발전량 상관관계 그래프</div>
 		</a>
 		</div>
-
-		<div class="graph" id="g3">
-		<a href="rainfall">
-			<img src="resources/img/rainfall.jpg" alt="강수량" class="bgi">
-			<div>강수량 - 발전량 상관관계 그래프</div>
-		</a>
-		</div>
+		
 	</div>
 </div>
 
