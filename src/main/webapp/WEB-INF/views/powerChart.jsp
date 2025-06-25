@@ -53,7 +53,7 @@
             gap: 25px;
             width: 100%;
             max-width: 1400px;
-            margin: 0 auto; /* 가운데 정렬 */
+            margin: 0 auto;
             height: 700px;
             box-sizing: border-box;
         }
@@ -118,17 +118,17 @@
 
     <div class="chart-container">
         <div class="chart-box line-chart">
-            <h3>연도별 발전량 (3개 발전소 합산) vs 고정 평균값 (월별)</h3>
+            
             <canvas id="lineChart"></canvas>
         </div>
 
         <div class="side-charts">
             <div class="chart-box small-chart">
-                <h3>발전소별 월별 발전량 (막대그래프)</h3>
+                <h3>발전소별 월별 발전량</h3>
                 <canvas id="barChart"></canvas>
             </div>
             <div class="chart-box small-chart">
-                <h3>발전소별 발전량 추이 (라인그래프)</h3>
+                <h3>발전소별 연도별 합산 발전량 추이</h3>
                 <canvas id="trendChart"></canvas>
             </div>
         </div>
@@ -156,7 +156,6 @@
         "2024": [108, 120]
     };
 
-    // 첫번째 그래프용: 3개 발전소 월별 합산 (실적/예측)
     function getSummedMonthlyData(year) {
         let data9997, data9998, dataD001;
         if (year === '2025') {
@@ -174,7 +173,6 @@
             dataD001 = [];
         }
 
-        // 숫자 변환 및 합산
         const summed = [];
         for(let i=0; i<12; i++){
             summed[i] = (Number(data9997[i])||0) + (Number(data9998[i])||0) + (Number(dataD001[i])||0);
@@ -182,7 +180,6 @@
         return summed;
     }
 
-    // 고정 평균값 (3개 발전소 월별 합산)
     function getFixedAverageSum() {
         const avgArr = [];
         for(let i=0; i<12; i++){
@@ -191,8 +188,6 @@
         return avgArr;
     }
 
-    // 두번째 그래프용: 발전소별 월별 데이터 (실적/예측)
-    // year -> 월별 데이터 배열 리턴 (배열 길이 12)
     function getMonthlyDataByPlant(year) {
         let data9997, data9998, dataD001;
         if (year === '2025') {
@@ -210,7 +205,6 @@
             dataD001 = [];
         }
 
-        // 숫자 변환 보장
         data9997 = data9997.map(x => Number(x) || 0);
         data9998 = data9998.map(x => Number(x) || 0);
         dataD001 = dataD001.map(x => Number(x) || 0);
@@ -218,15 +212,40 @@
         return { data9997, data9998, dataD001 };
     }
 
-    // 세번째 그래프용: 발전소별 월별 추이(라인그래프) (실적/예측)
-    // 여기서는 같은 데이터 배열을 활용함(추세는 월별 발전량 시계열)
-    // 만약 필요시 가공 추가 가능
+    function getYearlySumByPlant() {
+        const years = ["2022", "2023", "2024", "2025"];
 
-    // 차트 객체 전역 변수
+        function sumRange(arr, start, end) {
+            return arr.slice(start, end).reduce((a,b) => a + Number(b||0), 0);
+        }
+
+        const sums9997 = [];
+        const sums9998 = [];
+        const sumsD001 = [];
+
+        years.forEach(year => {
+            if(year === '2025') {
+                sums9997.push(pred_9997.reduce((a,b) => a + Number(b||0), 0));
+                sums9998.push(pred_9998.reduce((a,b) => a + Number(b||0), 0));
+                sumsD001.push(pred_D001.reduce((a,b) => a + Number(b||0), 0));
+            } else if(yearIndexMap.hasOwnProperty(year)) {
+                const [start, end] = yearIndexMap[year];
+                sums9997.push(sumRange(list_9997, start, end));
+                sums9998.push(sumRange(list_9998, start, end));
+                sumsD001.push(sumRange(list_D001, start, end));
+            } else {
+                sums9997.push(0);
+                sums9998.push(0);
+                sumsD001.push(0);
+            }
+        });
+
+        return { sums9997, sums9998, sumsD001, years };
+    }
+
     let lineChart, barChart, trendChart;
 
     function updateAllCharts(year) {
-        // 1. 첫번째 그래프 업데이트
         const summedData = getSummedMonthlyData(year);
         const fixedAvgData = getFixedAverageSum();
 
@@ -239,7 +258,7 @@
                 labels: labels,
                 datasets: [
                     {
-                        label: `${year}년 발전량 (3개 발전소 합산)`,
+                        label: year + '년 발전량 (3개 발전소 합산)',
                         data: summedData,
                         borderColor: 'lime',
                         backgroundColor: 'rgba(50,205,50,0.3)',
@@ -247,7 +266,7 @@
                         fill: true,
                     },
                     {
-                        label: '고정 평균값 (월별 총합 평균)',
+                        label: '평균 발전량 (월별 총합 평균)',
                         data: fixedAvgData,
                         borderColor: 'orange',
                         borderDash: [6, 6],
@@ -262,7 +281,7 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: `${year}년 발전량 vs 고정 평균값`,
+                        text: year + '년 발전량 vs 평균 발전량',
                         color: 'white',
                         font: {size: 18}
                     },
@@ -290,7 +309,6 @@
             }
         });
 
-        // 2. 두번째 그래프 업데이트 (발전소별 월별 막대그래프)
         const plantData = getMonthlyDataByPlant(year);
 
         if(barChart) barChart.destroy();
@@ -312,7 +330,7 @@
                         backgroundColor: 'rgba(255, 99, 132, 0.7)'
                     },
                     {
-                        label: '군위화산풍력',
+                        label: '군위 화산풍력',
                         data: plantData.dataD001,
                         backgroundColor: 'rgba(255, 206, 86, 0.7)'
                     }
@@ -321,6 +339,7 @@
             options: {
                 responsive: true,
                 plugins: {
+                	
                     legend: {
                         position: 'top',
                         labels: {color: 'white'}
@@ -345,37 +364,38 @@
             }
         });
 
-        // 3. 세번째 그래프 업데이트 (발전소별 월별 추이 - 라인차트)
-        // 두번째 그래프와 동일 데이터, 라인차트로 표현
         if(trendChart) trendChart.destroy();
+
+        const yearlyData = getYearlySumByPlant();
+        const maxValue = Math.max(...yearlyData.sums9997, ...yearlyData.sums9998, ...yearlyData.sumsD001);
 
         const ctxTrend = document.getElementById('trendChart').getContext('2d');
         trendChart = new Chart(ctxTrend, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: yearlyData.years,
                 datasets: [
                     {
-                        label: '영흥풍력1호기 추이',
-                        data: plantData.data9997,
+                        label: '영흥풍력1호기 합산',
+                        data: yearlyData.sums9997,
                         borderColor: 'rgba(54, 162, 235, 1)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.3)',
+                        
                         tension: 0.3,
                         fill: true
                     },
                     {
-                        label: '영흥풍력2호기 추이',
-                        data: plantData.data9998,
+                        label: '영흥풍력2호기 합산',
+                        data: yearlyData.sums9998,
                         borderColor: 'rgba(255, 99, 132, 1)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                        
                         tension: 0.3,
                         fill: true
                     },
                     {
-                        label: '군위화산풍력 추이',
-                        data: plantData.dataD001,
+                        label: '군위 화산풍력 합산',
+                        data: yearlyData.sumsD001,
                         borderColor: 'rgba(255, 206, 86, 1)',
-                        backgroundColor: 'rgba(255, 206, 86, 0.3)',
+                        
                         tension: 0.3,
                         fill: true
                     }
@@ -392,16 +412,18 @@
                         callbacks: {
                             label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} MW`
                         }
-                    }
+                    },
+                    
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
+                        max: maxValue * 1.1,  // 최대값보다 10% 여유 둠
                         title: {display:true, text:'발전량 (MW)', color: 'white'},
                         ticks: {color: 'white'}
                     },
                     x: {
-                        title: {display:true, text:'월', color: 'white'},
+                        title: {display:true, text:'연도', color: 'white'},
                         ticks: {color: 'white'}
                     }
                 }
@@ -409,7 +431,6 @@
         });
     }
 
-    // 초기 로딩 시 2022년 데이터 표시
     updateAllCharts('2022');
 </script>
 
