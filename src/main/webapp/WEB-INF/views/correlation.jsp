@@ -14,9 +14,9 @@ body {
 	background-color: #474747; 
 	font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
 }
-
+ 
 p {  
-	color: white;
+	color: white; 
 	margin: 10px 20px;
 	font-size: 30px;
 }

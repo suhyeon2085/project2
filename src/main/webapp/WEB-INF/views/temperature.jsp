@@ -227,7 +227,7 @@ p{
 		            },
 		            y1: {
 		                type: 'linear',
-		                position: 'right',
+		                position:  'right',
 		                min: 0,
 		                max: 360,
 		                title: {

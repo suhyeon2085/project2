@@ -115,7 +115,7 @@ p{
 
 	
 	
-		<div id="windDirection">
+		<div id="windDirection"> 
 			<!-- 차트 그릴 캔버스 -->
 			<canvas id="windPowerChart"></canvas>
 			<canvas id="windVsPowerScatter"></canvas>

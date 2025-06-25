@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 public class WeatherController { 
-
+ 
     // 공공데이터 API 키 및 기본 URL
     private final String SERVICE_KEY = "Xt2J5qiWMhBStQGBnIfZnX70IMyBPilFz%2FeQD2LhGZyAcW4M9W6gaqUKLSKLuPntOP9KrVT3SuVYmR%2Boo54PKw%3D%3D";
     private final String API_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst";
