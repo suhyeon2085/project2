@@ -109,18 +109,92 @@ p{
 	<div id="sun">
 		<div style="display: flex; justify-content: space-between; align-items: center;">
 		  <p style="margin: 0;">풍속과 발전량 그래프</p>
-		  <a href="temperature" class="button-3d">기온 바로가기</a>
+		  <a href="temperature" class="button-3d">풍향 바로가기</a>
 		</div>
 
 
 	
 	
-	<div>파이썬에서 받은 그래프 넣기</div>
+		<div id="windDirection">
+			<!-- 차트 그릴 캔버스 -->
+			<canvas id="windPowerChart"></canvas>
+			<canvas id="windVsPowerScatter"></canvas>
+		</div>
+	
 	
 	
 	</div>
-	
+	${dataListJson}
+<script>
 
+// ③ 풍속-발전량 시계열 + 이중축
+new Chart(document.getElementById('windPowerChart'), {
+  type: 'bar',
+  data: {
+    labels: dates,
+    datasets: [
+      {
+        type: 'bar',
+        label: '발전량',
+        data: powers,
+        yAxisID: 'y',
+        backgroundColor: '#1abc9c'
+      },
+      {
+        type: 'line',
+        label: '풍속',
+        data: winds,
+        yAxisID: 'y1',
+        borderColor: '#9b59b6',
+        fill: false
+      }
+    ]
+  },
+  options: {
+    scales: {
+      y: { type: 'linear', position: 'left', title: { display:true, text:'발전량' } },
+      y1: { type: 'linear', position: 'right', title: { display:true, text:'풍속' }, grid: { drawOnChartArea:false } }
+    }
+  }
+});
+
+// ④ 풍속-발전량 산점도 + 회귀선
+{
+  const scatterCtx2 = document.getElementById('windVsPowerScatter').getContext('2d');
+  const {m, b} = linearRegression(winds, powers);
+  const xMin = Math.min(...winds);
+  const xMax = Math.max(...winds);
+  const regress = [{x: xMin, y: m * xMin + b}, {x: xMax, y: m * xMax + b}];
+
+  new Chart(scatterCtx2, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: '산점도', data: scatterDataWindSpeed, backgroundColor: 'rgba(75, 192, 192, 0.7)' },
+        { label: '회귀선', data: regress, type: 'line', borderColor: '#c0392b', fill: false, pointRadius: 0 }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          type: 'linear',
+          position: 'bottom',
+          title: { display: true, text: '풍속' }
+        },
+        y: {
+          title: { display: true, text: '발전량' }
+        }
+      },
+      plugins: {
+        legend: { display: true, position: 'top' },
+        tooltip: { enabled: true }
+      }
+    }
+  });
+}
+
+</script>
 	
 </body>
 </html>

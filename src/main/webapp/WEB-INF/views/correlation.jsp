@@ -161,8 +161,8 @@ a {
 	<div id="a">
 		<div class="graph" id="g1">
 		<a href="temperature">
-			<img src="resources/img/temperature2.jpg" alt="기온" class="bgi">
-			<div>기온 - 발전량 상관관계 그래프</div>
+			<img src="resources/img/windDirection.jpg" alt="기온" class="bgi">
+			<div>풍향 - 발전량 상관관계 그래프</div>
 		</a>
 		</div>
 

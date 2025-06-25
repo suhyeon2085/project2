@@ -36,11 +36,14 @@ Date todayParsed = inputFormat.parse(todayRaw);
 String todayFormatted = outputFormat.format(todayParsed);
 
 Map<String, String> todayData = dayWeather1500.get(todayFormatted);
+String todayTMP = (todayData != null && todayData.get("TMP") != null) ? todayData.get("TMP") : "0";
+String todayPCP = (todayData != null && todayData.get("PCP") != null) ? todayData.get("PCP") : "0";
 String todayREH = (todayData != null && todayData.get("REH") != null) ? todayData.get("REH") : "0";
+String todayVEC = (todayData != null && todayData.get("VEC") != null) ? todayData.get("VEC") : "0";
 
 String windVec = dayWeather1500.getOrDefault(todayFormatted, new HashMap<>()).get("VEC");
 
-
+System.out.println("tmp :" + todayTMP + "PCP :" + todayPCP + "REH :" + todayREH + "VEC :" +todayVEC);
 
 // 풍향 계산 
 String windDirectionStr = "풍향 없음";

@@ -1,6 +1,7 @@
 package org.zerock.controller;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,16 +14,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.servlet.ServletContext;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 import org.zerock.domain.WeatherData;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -150,16 +156,10 @@ public class WeatherController {
         return "correlation";
     }
 
-    // 기온 상관관계 페이지
-    @GetMapping("/temperature")
-    public String temperaturePage() {
-        return "temperature";
-    }
-
-    // 풍속 상관관계 페이지
-    @GetMapping("/windspeed")
-    public String windspeedPage() {
-        return "windspeed";
+    // 지도 페이지 연결
+    @GetMapping("/map")
+    public String showMap() {
+        return "weather";
     }
 
     // 강수량 상관관계 페이지
@@ -180,10 +180,70 @@ public class WeatherController {
 
         return Arrays.asList(response.getBody());
     }
+    
 
-    // 지도 페이지 연결
-    @GetMapping("/map")
-    public String showMap() {
-        return "weather";
+    // 풍향/풍속/날짜 json에서 데이터 가져오는 공통 메서드 추가
+    private List<WeatherData> loadWeatherJson() {
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (InputStream is = getClass().getResourceAsStream("/Data/dongbuk_data.json")) {
+        	
+            if (is == null) {
+                System.out.println("❌ JSON 파일 없음");
+                return null;
+            }
+
+            List<WeatherData> data = mapper.readValue(is, new TypeReference<List<WeatherData>>() {});
+            
+            System.out.println("✅ 데이터 수: " + data.size());
+
+            for (WeatherData wd : data) {
+                System.out.println("날짜: " + wd.getDate() + ", 발전량: " + wd.getPower());
+            }
+            
+            return data;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        
     }
+    
+    //풍향 jsp로 맵핑( json 데이터를 받은걸loadWeatherJson() 여기에 뿌려준다는 것 )
+    @RequestMapping("/temperature")
+    public String showTemperature(Model model) {
+        List<WeatherData> list = loadWeatherJson();
+        
+        // JSON 문자열로 변환해서 전달
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String jsonString = mapper.writeValueAsString(list);
+            model.addAttribute("dataListJson", jsonString);  
+        } catch (IOException e) {
+            e.printStackTrace();
+            model.addAttribute("dataListJson", "[]");
+        }
+
+        return "temperature";
+    }
+    //풍속 jsp로 맵핑( json 데이터를 받은걸loadWeatherJson() 여기에 뿌려준다는 것 )
+    @RequestMapping("/windspeed")
+    public String showWindspeed(Model model) {
+        List<WeatherData> list = loadWeatherJson();
+        
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String jsonString = mapper.writeValueAsString(list);
+            model.addAttribute("dataListJson", jsonString);  
+        } catch (IOException e) {
+            e.printStackTrace();
+            model.addAttribute("dataListJson", "[]");
+        }
+
+        return "windspeed";
+    }
+
+    
+
+
 }
