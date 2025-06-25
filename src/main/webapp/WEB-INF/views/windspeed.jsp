@@ -124,7 +124,7 @@ p{
 	
 	
 	</div>
-	${dataListJson}
+	${dataListJson} 
 <script>
 
 // ③ 풍속-발전량 시계열 + 이중축

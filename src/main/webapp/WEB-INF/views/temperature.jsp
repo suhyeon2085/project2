@@ -236,7 +236,7 @@ p{
 		                    color: '#ffffff',
 		                    font: { size: 14 }
 		                },
-		                ticks: {
+		                ticks: { 
 		                    color: '#ffffff'
 		                },
 		                grid: {
