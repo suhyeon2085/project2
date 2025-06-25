@@ -261,9 +261,9 @@
                         label: year + '년 발전량 (3개 발전소 합산)',
                         data: summedData,
                         borderColor: 'lime',
-                        backgroundColor: 'rgba(50,205,50,0.3)',
+                        
                         tension: 0.3,
-                        fill: true,
+                        fill: false,
                     },
                     {
                         label: '평균 발전량 (월별 총합 평균)',
@@ -376,28 +376,28 @@
                 labels: yearlyData.years,
                 datasets: [
                     {
-                        label: '영흥풍력1호기 합산',
+                        label: '영흥풍력1호기',
                         data: yearlyData.sums9997,
                         borderColor: 'rgba(54, 162, 235, 1)',
                         
                         tension: 0.3,
-                        fill: true
+                        fill: false
                     },
                     {
-                        label: '영흥풍력2호기 합산',
+                        label: '영흥풍력2호기',
                         data: yearlyData.sums9998,
                         borderColor: 'rgba(255, 99, 132, 1)',
                         
                         tension: 0.3,
-                        fill: true
+                        fill: false
                     },
                     {
-                        label: '군위 화산풍력 합산',
+                        label: '군위 화산풍력',
                         data: yearlyData.sumsD001,
                         borderColor: 'rgba(255, 206, 86, 1)',
                         
                         tension: 0.3,
-                        fill: true
+                        fill: false
                     }
                 ]
             },
@@ -418,7 +418,7 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: maxValue * 1.1,  // 최대값보다 10% 여유 둠
+                        
                         title: {display:true, text:'발전량 (MW)', color: 'white'},
                         ticks: {color: 'white'}
                     },
