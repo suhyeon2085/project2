@@ -5,18 +5,18 @@
 <head>
 <meta charset="UTF-8">
 <title>날씨와 상관관계 나타내는 그래프</title>
-<style>
+<style> 
 * { box-sizing: border-box; }
 
-body {
+body { 
 	margin: 0;
 	padding: 0;
-	background-color: #474747;
+	background-color: #474747; 
 	font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
 }
-
-p {
-	color: white;
+ 
+p {  
+	color: white; 
 	margin: 10px 20px;
 	font-size: 30px;
 }
@@ -161,8 +161,8 @@ a {
 	<div id="a">
 		<div class="graph" id="g1">
 		<a href="temperature">
-			<img src="resources/img/temperature2.jpg" alt="기온" class="bgi">
-			<div>기온 - 발전량 상관관계 그래프</div>
+			<img src="resources/img/windDirection.jpg" alt="기온" class="bgi">
+			<div>풍향 - 발전량 상관관계 그래프</div>
 		</a>
 		</div>
 
@@ -172,13 +172,7 @@ a {
 			<div>풍속 - 발전량 상관관계 그래프</div>
 		</a>
 		</div>
-
-		<div class="graph" id="g3">
-		<a href="rainfall">
-			<img src="resources/img/rainfall.jpg" alt="강수량" class="bgi">
-			<div>강수량 - 발전량 상관관계 그래프</div>
-		</a>
-		</div>
+		
 	</div>
 </div>
 

@@ -12,10 +12,9 @@ Map<String, Map<String, String>> dayWeather0600 = new TreeMap<>();
 
 SimpleDateFormat inputFormat = new SimpleDateFormat("yyyyMMdd");
 SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy/MM/dd");
-
-
-System.out.println(new com.google.gson.Gson().toJson(weatherList));//데이터 출력
-
+  
+  
+System.out.println(new com.google.gson.Gson().toJson(weatherList));
 
 for (WeatherData item : weatherList) {
     String rawDate = item.getFcstDate();
@@ -37,11 +36,14 @@ Date todayParsed = inputFormat.parse(todayRaw);
 String todayFormatted = outputFormat.format(todayParsed);
 
 Map<String, String> todayData = dayWeather1500.get(todayFormatted);
+String todayTMP = (todayData != null && todayData.get("TMP") != null) ? todayData.get("TMP") : "0";
+String todayPCP = (todayData != null && todayData.get("PCP") != null) ? todayData.get("PCP") : "0";
 String todayREH = (todayData != null && todayData.get("REH") != null) ? todayData.get("REH") : "0";
+String todayVEC = (todayData != null && todayData.get("VEC") != null) ? todayData.get("VEC") : "0";
 
 String windVec = dayWeather1500.getOrDefault(todayFormatted, new HashMap<>()).get("VEC");
 
-
+System.out.println("tmp :" + todayTMP + "PCP :" + todayPCP + "REH :" + todayREH + "VEC :" +todayVEC);
 
 // 풍향 계산 
 String windDirectionStr = "풍향 없음";
@@ -416,8 +418,8 @@ request.setAttribute("todayVEC", windVec);
 		<div class="search-box">
 		  <input type="text" id="searchInput" class="custom-input" placeholder="검색어 입력" autocomplete="off" />
 		  <span id="searchIcon" class="search-icon" role="button" tabindex="0" aria-label="검색">
-		  <i class="fas fa-search"></i>
-		</span>
+  <i class="fas fa-search"></i>
+</span>
 
 		  <ul class="suggestions-list" id="suggestions"></ul>
 		</div>
@@ -517,59 +519,19 @@ request.setAttribute("todayVEC", windVec);
 
 
 <!-- 카카오 지도 스크립트 -->
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=e950db27bdab1260d20a67d4d89b7bbf&libraries=services"></script>
-
+<script src="http://dapi.kakao.com/v2/maps/sdk.js?appkey=e950db27bdab1260d20a67d4d89b7bbf&autoload=false"></script>
 <script>
 
 	//이건 지도 맵 
-	// 카카오 지도 + JSON 마커 추가
-// JSON에서 가져온 지역 및 좌표 예시
-const addData = [
-  { ADD: "Seoul", lat: 37.5665, lng: 126.9780 },
-];
-
-// 지도 초기화 (Leaflet 기준)
-const map = L.map('map').setView([37.5665, 126.9780], 10);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-// 날씨 API 호출 함수 (예시는 공공데이터 API 형태에 맞춰 바꿔야 함)
-async function fetchWeather(lat, lng) {
-  // 예: 공공데이터 날씨 API URL 예시
-  const apiKey = 'Xt2J5qiWMhBStQGBnIfZnX70IMyBPilFz%2FeQD2LhGZyAcW4M9W6gaqUKLSKLuPntOP9KrVT3SuVYmR%2Boo54PKw%3D%3D';
-  const url = `https://api.weather.go.kr/data?lat=${lat}&lon=${lng}&apikey=${apiKey}`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    // 여기서 필요한 날씨 정보 파싱
-    return data.weather ? data.weather : "No weather data";
-  } catch (error) {
-    console.error('Weather API error:', error);
-    return "Weather fetch error";
-  }
-}
-
-// 마커 생성 및 팝업에 날씨 표시
-addData.forEach(async (item) => {
-  const marker = L.marker([item.lat, item.lng]).addTo(map);
-
-  // 날씨 API 호출
-  const weatherInfo = await fetchWeather(item.lat, item.lng);
-
-  // 팝업 내용 만들기
-  const popupContent = `<b>${item.ADD}</b><br>Weather: ${JSON.stringify(weatherInfo)}`;
-
-  marker.bindPopup(popupContent);
-});
-
-document.getElementById('searchIcon').addEventListener('click', () => {
-	  const city = document.getElementById('searchInput').value.trim();
-	  if(city) {
-	    handleCityChange(city);
-	  }
-	});
+	  kakao.maps.load(function () {
+	    var mapContainer = document.getElementById('map');
+	    var mapOption = {
+	      center: new kakao.maps.LatLng(36.5, 127.8),
+	      level: 13
+	    };
+	    var map = new kakao.maps.Map(mapContainer, mapOption);
+	  });
+  
 
   
   // 네비게이션 바 
@@ -615,7 +577,7 @@ document.getElementById('searchIcon').addEventListener('click', () => {
 	  };
 	  
 	  
- // 검색칸 자동완성
+	  // 검색칸 자동완성
 	const locations = ["울산", "인천", "제주도", "대전", "전라남도"];
 	const input = document.getElementById("searchInput");
 	const suggestions = document.getElementById("suggestions");
@@ -654,7 +616,7 @@ document.getElementById('searchIcon').addEventListener('click', () => {
 	    suggestions.innerHTML = "";
 	    suggestions.style.display = "none";
 	  }
-	}); 
+	});
 
 </script>
 
