@@ -409,10 +409,12 @@ request.setAttribute("todayVEC", windVec);
 	  padding: 2px 6px;
 	  border-radius: 5px;
 	  border: 1px solid #ccc;
+	  max-width: none; 
 	}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -520,9 +522,10 @@ request.setAttribute("todayVEC", windVec);
       </div>
     </div>
 
-    <!-- 계절별 발전량 -->
+    <!-- 예측 발전량 -->
     <div class="power-chart" id="predictPower">
 	  <div style="font-weight:bold; font-size:16px;">예측 발전량</div>
+  	  <canvas id="powerChart" style="width: 100%; height: 350px;"></canvas>
 	</div>
   </div>
 </div>
@@ -533,6 +536,7 @@ let selectedRegion = "인천";
 let plantData = [];
 let allResults = [];
 let geojson;
+let regionChart
 
 function parsePCP(value) {
 	  if (!value || value.includes("없음")) return 0;
@@ -550,8 +554,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   geojson = L.geoJSON(sidoData, { style, onEachFeature }).addTo(map);
 
   plantData = await fetch('/resources/Data/plant_location.json').then(r => r.json());
-
-  updateRegionView("인천");
+  
+  geojson.eachLayer(layer => {
+	    if (layer.feature.properties.CTP_KOR_NM === "인천광역시") {
+	      layer.fire('click'); // 클릭 이벤트 강제 실행
+	    }
+	  });
+  //updateRegionView("인천");
 });
 
 
@@ -593,8 +602,8 @@ function resetHighlight(e) {
 	        icon: L.divIcon({
 	          className: 'region-label',
 	          html: "<span>" + name + "</span>",
-	          iconSize: [100, 20],
-	          iconAnchor: [50, 10]
+	          iconSize: [160, 24],       // 너비 충분히 확보
+	          iconAnchor: [80, 12]       // 가운데 정렬
 	        }),
 	        interactive: false
 	      });
@@ -715,6 +724,7 @@ async function updateRegionView(region) {
   const dayIcons = document.querySelectorAll('.day-icon');
   const dateList = Array.from(dayIcons).map(icon => icon.dataset.date);
   let html = "";
+  let chartData = []; 
 
   //1번만 API 호출
   const fullWeatherData = await getWeather(Number(regionPlants[0].lat), Number(regionPlants[0].lng), dateList[0]);
@@ -760,14 +770,89 @@ async function updateRegionView(region) {
         ).join('')}
       </ul>
       </div>`;
+      
+ 	// 👇 그래프용 데이터 저장
+    chartData.push({
+	    date: dateKey,
+	    total: total.toFixed(2),
+	    tooltip: `총 예측 발전량: \${total.toFixed(2)} kW`
+	    //tooltip: `총 예측 발전량: \${total.toFixed(2)} kW\n` + 
+	    	//predictions.map(p => `\${p.plant}: \${p.predicted_power.toFixed(2)} kW`).join('\n')
+    });
   }
-
-  document.getElementById("predictPower").innerHTML = html;
-
   const latestWeatherData = await getWeather(Number(regionPlants[0].lat), Number(regionPlants[0].lng), dateList[0]);
   updateWeatherPanel(latestWeatherData);
   updateDayIcons(latestWeatherData);
+
+  document.getElementById("predictPower").innerHTML =
+	  `<div style="font-weight:bold; font-size:16px; margin-bottom:30px;">📅 \${region} 예측 발전량</div>
+	   <canvas id="powerChart" style="width:100%; height: 350px;"></canvas>`;
+
+
+  drawPowerChart(chartData);
+
+  
 }
+
+function drawPowerChart(data) {
+	  const ctx = document.getElementById('powerChart').getContext('2d');
+	  if (regionChart) regionChart.destroy();  // 기존 차트 제거
+
+	  regionChart = new Chart(ctx, {
+	    type: 'bar',
+	    data: {
+	      labels: data.map(d => d.date),
+	      datasets: [{
+	        label: '총 예측 발전량 (kW)',
+	        data: data.map(d => d.total),
+	        backgroundColor: '#003366',
+	        borderRadius: 6
+	      }]
+	    },
+	    options: {
+	      responsive: true,
+	      plugins: {
+	        tooltip: {
+	          callbacks: {
+	            label: function(context) {
+	              return data[context.dataIndex].tooltip.split('\n');
+	            }
+	          }
+	        },
+	        legend: {
+	          display: false
+	        }
+	      },
+	      scales: {
+	          x: {
+	            ticks: {
+	              color: '#ffffff' // ✅ x축 눈금 색상 흰색
+	            },
+	            grid: {
+	              color: '#ffffff',     // ✅ x축 그리드 선 색상
+	              borderColor: '#ffffff' // ✅ x축 테두리 색상
+	            }
+	          },
+	          y: {
+	            title: {
+	              display: true,
+	              text: 'kW',
+	              color: '#ffffff' // ✅ y축 제목 색상 흰색
+	            },
+	            ticks: {
+	              color: '#ffffff' // ✅ y축 눈금 색상 흰색
+	            },
+	            grid: {
+	              color: '#ffffff',     // ✅ y축 그리드 선 색상
+	              borderColor: '#ffffff' // ✅ y축 테두리 색상
+	            },
+	            beginAtZero: true
+	          }
+	        }
+	    }
+	  });
+	}
+
 
 function updateWeatherPanel(weatherData) {
   const TMP = weatherData.find(w => w.category === "TMP")?.fcstValue;
