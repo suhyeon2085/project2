@@ -58,7 +58,7 @@ body{
 	background-color: #595959;
 	width:100%;
 	border-radius: 10px;
-	padding: 10px 10px;
+	padding: 10px 20px;
 	margin-left: 10px;
 	margin-top:30px;
 }
@@ -72,12 +72,12 @@ p{
     padding: 7px;
     height: auto;
     box-sizing: border-box;
-    border-radius: 50px;
+    border-radius: 10px;
     font-size: 12px;
     font-weight: 700;
-    color: #595959;
+    color: #F4F3F2;
     border: 2px solid #999999;  
-    background-color: #F4F3F2; 
+/*     background-color: #F4F3F2;  */
     cursor: pointer;
     transition: all 0.3s ease;
     font-family: 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif;
@@ -99,6 +99,9 @@ p{
 
 </style> 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2"></script>
+
 </head>
 <body>
 	<div id="title">
@@ -116,21 +119,20 @@ p{
 		</div>
  
 	
-	<!-- 차트 그릴 캔버스 -->
-	
-	<!-- 풍향 & 발전량 상관관계  -->
-	<div>
-	  	<canvas id="windDirPowerChart" width="300" height="100" style="margin-top:30px;"></canvas>
-	</div>  	
-	
-	<div>
-	    <canvas id="windDirVsPowerScatter" width="800" height="400" style="margin-top:50px;"></canvas>
-	</div>
+		<!-- 차트 그릴 캔버스 -->
+		<div><!-- 풍향 & 발전량 상관관계  -->
+		  	<canvas id="windDirPowerChart" width="300" height="65" style="margin-top:10px;"></canvas>
+		</div>  
+			
+		
+		<div><!-- 날짜 풍향 & 발전량 상관관계  -->
+		    <canvas id="windDirVsPowerScatter" width="300" height="65" style="margin-top:10px;"></canvas>
+		</div>
 	
 	</div>
 	
 <script>
-	//상관관계 표현 ( 상관관계 산점도) 
+	//연도별 비교 차트 
 	const dataList = JSON.parse('<c:out value="${dataListJson}" escapeXml="false" />');
 	
 	// 1. 날짜에서 'YYYY-MM'만 추출
@@ -202,6 +204,7 @@ p{
 		        scales: {
 		            x: {
 		                ticks: {
+		                	maxTicksLimit: 12,  // 최대 6개만 라벨 표시
 		                    color: '#ffffff',
 		                    font: { size: 12 }
 		                },
@@ -232,7 +235,7 @@ p{
 		                max: 360,
 		                title: {
 		                    display: true,
-		                    text: '풍향 (0~360도)',
+		                    text: '풍향',
 		                    color: '#ffffff',
 		                    font: { size: 14 }
 		                },
@@ -248,8 +251,8 @@ p{
 		});
 	
 	
-	// 연도별 비교 차트( 시계열 비교 )
-	const scatterData = dataList.map(d => ({
+		// 풍향 발전량 상관관계
+		const scatterData = dataList.map(d => ({
 	    x: d.windDirection,
 	    y: d.power
 	  }));
@@ -286,43 +289,100 @@ p{
 	  new Chart(document.getElementById('windDirVsPowerScatter'), {
 	    type: 'scatter',
 	    data: {
-	      datasets: [
-	        {
-	          label: '풍향 vs 발전량',
-	          data: scatterData,
-	          backgroundColor: '#27ae60',
-	        },
-	        {
-	          label: '회귀선',
-	          data: regressionLine,
-	          type: 'line',
-	          borderColor: '#e74c3c',
-	          pointRadius: 0,
-	          fill: false,
-	          tension: 0
-	        }
-	      ]
-	    },
-	    options: {
-	      scales: {
-	        x: {
-	          type: 'linear',
-	          min: 0,
-	          max: 360,
-	          title: {
-	            display: true,
-	            text: '풍향 (°)'
-	          }
-	        },
-	        y: {
-	          title: {
-	            display: true,
-	            text: '발전량'
-	          }
-	        }
-	      }
-	    }
-	  });
+	    	 datasets: [
+	    	      {
+	    	        label: '풍향 vs 발전량',
+	    	        data: scatterData,
+	    	        backgroundColor: 'rgba(39, 174, 96, 0.7)', // 초록색 투명도 조절
+	    	        borderColor: '#27ae60',
+	    	        borderWidth: 1,
+	    	        pointRadius: 6,  // 점 크기 키움
+	    	        pointHoverRadius: 9, // 호버 시 점 크기
+	    	        pointHoverBackgroundColor: '#2ecc71'
+	    	      },
+	    	      {
+	    	        label: '회귀선',
+	    	        data: regressionLine,
+	    	        type: 'line',
+	    	        borderColor: '#e74c3c',
+	    	        borderWidth: 3,  // 선 굵기 키움
+	    	          pointRadius: 4,
+	    	          pointHoverRadius: 5,
+	    	          pointBackgroundColor: '#e74c3c',
+	    	          fill: true,
+	    	          backgroundColor: 'rgba(231, 76, 60, 0.1)',
+	    	        tension: 0
+	    	      }
+	    	    ]
+	    	  },
+	    	  options: {
+	    	    responsive: true,
+	    	    plugins: {
+	    	      legend: {
+	    	        labels: {
+	    	          color: '#ffffff',  // 범례 글자색 흰색
+	    	          font: {
+	    	            size: 14,
+	    	            weight: 'bold'
+	    	          }
+	    	        }
+	    	      },
+	    	      tooltip: {
+	    	        backgroundColor: '#34495e',
+	    	        titleColor: '#ecf0f1',
+	    	        bodyColor: '#ecf0f1',
+	    	        callbacks: {
+	    	          label: function(context) {
+	    	            const x = context.parsed.x.toFixed(1);
+	    	            const y = context.parsed.y.toFixed(1);
+	    	            return `풍향: ${x}°, 발전량: ${y}`;
+	    	          }
+	    	        }
+	    	      }
+	    	    },
+	    	    scales: {
+	    	      x: {
+	    	        type: 'linear',
+	    	        min: 0,
+	    	        max: 360,
+	    	        title: {
+	    	          display: true,
+	    	          text: '풍향 (°)',
+	    	          color: '#ffffff',
+	    	          font: { size: 16, weight: 'bold' }
+	    	        },
+	    	        ticks: {
+	    	          color: '#ffffff',
+	    	          stepSize: 45, // 45도 단위 눈금 표시
+	    	          font: { size: 12 }
+	    	        },
+	    	        grid: {
+	    	          color: 'rgba(255,255,255,0.2)', // 연한 흰색 그리드
+	    	          borderColor: '#cccccc'
+	    	        }
+	    	      },
+	    	      y: {
+	    	        title: {
+	    	          display: true,
+	    	          text: '발전량',
+	    	          color: '#ffffff',
+	    	          font: { size: 16, weight: 'bold' }
+	    	        },
+	    	        ticks: {
+	    	          color: '#ffffff',
+	    	          font: { size: 12 }
+	    	        },
+	    	        grid: {
+	    	          color: 'rgba(255,255,255,0.2)',
+	    	          borderColor: '#cccccc'
+	    	        }
+	    	      }
+	    	    },
+	    	    layout: {
+	    	      padding: 20
+	    	    }
+	    	  }
+	    	});
 </script>
 
 <!--  확인하는 템플릿 문자열  -->
