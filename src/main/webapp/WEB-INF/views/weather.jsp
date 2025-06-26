@@ -24,6 +24,8 @@ for (WeatherData item : weatherList) {
     if ("1500".equals(item.getFcstTime())) {
         dayWeather1500.putIfAbsent(formattedDate, new HashMap<>());
         dayWeather1500.get(formattedDate).put(item.getCategory(), item.getFcstValue());
+        
+        System.out.println("[1500]" + formattedDate + "," + item.getCategory() + "=" + item.getFcstValue());
     } else if ("0600".equals(item.getFcstTime()) && "TMN".equals(item.getCategory())) {
         dayWeather0600.putIfAbsent(formattedDate, new HashMap<>());
         dayWeather0600.get(formattedDate).put(item.getCategory(), item.getFcstValue());
@@ -399,8 +401,18 @@ request.setAttribute("todayVEC", windVec);
 	  transform: scale(1.1);
 	}
 	
-
+	.region-label span {
+	  font-weight: bold;
+	  color: #003366;
+	  font-size: 14px;
+	  background-color: rgba(255, 255, 255, 0.7);
+	  padding: 2px 6px;
+	  border-radius: 5px;
+	  border: 1px solid #ccc;
+	}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </head>
 
 <body>
@@ -414,13 +426,6 @@ request.setAttribute("todayVEC", windVec);
 <header>
   <div class="header-container">
     <p class="header-title">날씨에 따라 다른 발전량 알아보기</p>
-
-		<div class="search-box">
-		  <input type="text" id="searchInput" class="custom-input" placeholder="검색어 입력" autocomplete="off" />
-		  <span id="searchIcon" class="search-icon" role="button" tabindex="0" aria-label="검색">
-  <i class="fas fa-search"></i>
-</span>
-
 		  <ul class="suggestions-list" id="suggestions"></ul>
 		</div>
 
@@ -452,31 +457,37 @@ request.setAttribute("todayVEC", windVec);
       <!-- 날씨 예보 -->
       <div id="weather" style="flex: 2;">
         <div class="weather-title">일간 날씨 예보</div>
-        <label>당일 최저기온 ℃은 제공하지 않음</label>
         <div class="weather-row">
-          <c:forEach items="${dayWeather1500}" var="entry">
-            <div class="day-icon">
-              <div>${entry.key}</div>
-              <c:choose>
-				    <c:when test="${entry.value.POP <= 33}">
-				      <img src="resources/img/sun.png" class="weather-icon" />
-				    </c:when>
-				    <c:when test="${entry.value.POP <= 66}">
-				      <img src="resources/img/cloudy.png" class="weather-icon" />
-				    </c:when>
-				    <c:otherwise>
-				      <img src="resources/img/rainy.png" class="weather-icon" />
-				    </c:otherwise>
-				  </c:choose>
-           <div>
-        <c:out value="${dayWeather0600[entry.key].TMN}" default="0" />°C /
-        <c:out value="${entry.value.TMX}" default="N/A" />°C
-      </div>
-      <div>강수량: ${entry.value.POP}%</div>
-      <div>풍속: ${entry.value.WSD} m/s</div>
-    </div>
-          </c:forEach>
-        </div>
+		  <c:forEach items="${dayWeather1500}" var="entry">
+		    <div class="day-icon"
+		         data-date="${entry.key}"
+		         data-pop="${entry.value.POP}"
+		         data-wsd="${entry.value.WSD}"
+		         data-tmx="${entry.value.TMX}"
+		         data-tmn="${dayWeather0600[entry.key].TMN}"
+		         data-vec="${entry.value.TMP}"
+		         data-vec="${entry.value.VEC}"
+			     data-reh="${entry.value.REH}"
+			     data-pcp="${entry.value.PCP}"
+		         >
+		      <div>${entry.key}</div>
+		      <c:choose>
+		        <c:when test="${entry.value.POP <= 33}">
+		          <img src="resources/img/sun.png" class="weather-icon" />
+		        </c:when>
+		        <c:when test="${entry.value.POP <= 66}">
+		          <img src="resources/img/cloudy.png" class="weather-icon" />
+		        </c:when>
+		        <c:otherwise>
+		          <img src="resources/img/rainy.png" class="weather-icon" />
+		        </c:otherwise>
+		      </c:choose>
+		      <div class="temp">${dayWeather0600[entry.key].TMN}°C / ${entry.value.TMX}°C</div>
+		      <div class="rain">강수확률: ${entry.value.POP}%</div>
+		      <div class="windspeed">풍속: ${entry.value.WSD} m/s</div>
+		    </div>
+		  </c:forEach>
+		</div>
       </div>
 
       <!-- 바람 / 기압 -->
@@ -510,115 +521,338 @@ request.setAttribute("todayVEC", windVec);
     </div>
 
     <!-- 계절별 발전량 -->
-    <div class="power-chart">
-      <div style="font-weight:bold; font-size:16px;">계절에 따라 다른 발전량 차이</div>
-
-    </div>
+    <div class="power-chart" id="predictPower">
+	  <div style="font-weight:bold; font-size:16px;">예측 발전량</div>
+	</div>
   </div>
 </div>
 
 
-<!-- 카카오 지도 스크립트 -->
-<script src="http://dapi.kakao.com/v2/maps/sdk.js?appkey=e950db27bdab1260d20a67d4d89b7bbf&autoload=false"></script>
 <script>
+let selectedRegion = "인천";
+let plantData = [];
+let allResults = [];
+let geojson;
 
-	//이건 지도 맵 
-	  kakao.maps.load(function () {
-	    var mapContainer = document.getElementById('map');
-	    var mapOption = {
-	      center: new kakao.maps.LatLng(36.5, 127.8),
-	      level: 13
-	    };
-	    var map = new kakao.maps.Map(mapContainer, mapOption);
-	  });
-  
-
-  
-  // 네비게이션 바 
-	function handleCityChange(city) {
-	  if (city) {
-	    // 선택된 도시로 이동하거나 필터링 동작 나중에 지역넣자
-	    window.location.href = `/weather?city=${city}`;
-	  }
+function parsePCP(value) {
+	  if (!value || value.includes("없음")) return 0;
+	  const match = value.match(/[\d.]+/);
+	  return match ? parseFloat(match[0]) : 0;
 	}
- 
- 
- // 습도 계기판 
- window.onload = function() {
-	 var opts = {
-			  angle: 0, 			//반원 기울기
-			  lineWidth: 0.32,  	//반원 굴기
-			  radiusScale: 1,		//반원 전체 크기
-			  pointer: {
-			    length: 0.6,		//바늘 길이
-			    strokeWidth: 0.03,	// 바늘 굵기
-			    color: '#f4f3f2'	//바늘 색깔
-			  },
-			  limitMax: false,
-			  limitMin: false,
-			  colorStart: '#00aaff', 	//그라데이션 시작 색
-			  colorStop: '#0042ff', 	//그라데이션 끝 색
-			  strokeColor: '#d5f4ff',	//반원 배경 색
-			  generateGradient: true,	//그라데이션 사용 여부
-			  highDpiSupport: true,
-			};
-	    
-	    var target = document.getElementById('humidityGauge'); 
-	    var gauge = new Gauge(target).setOptions(opts);
-	    gauge.maxValue = 100;
-	    gauge.setMinValue(0);
-	    gauge.animationSpeed = 32;
-	    
-	    // JSP에서 넘어온 습도값을 JS 변수로 받아오기
-	   var humidityValue = parseInt('${todayREH}');
 
-	    
-	    gauge.set(humidityValue);
-	  };
-	  
-	  
-	  // 검색칸 자동완성
-	const locations = ["울산", "인천", "제주도", "대전", "전라남도"];
-	const input = document.getElementById("searchInput");
-	const suggestions = document.getElementById("suggestions");
+const map = L.map('map').setView([36.0, 127.7], 7);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; CARTO', subdomains: 'abcd', maxZoom: 18
+}).addTo(map);
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const sidoData = await fetch('resources/Data/SIDO_MAP_2022.json').then(r => r.json());
+  geojson = L.geoJSON(sidoData, { style, onEachFeature }).addTo(map);
+
+  plantData = await fetch('/resources/Data/plant_location.json').then(r => r.json());
+
+  updateRegionView("인천");
+});
+
+
+function style(feature) {
+  return { fillColor: '#f0f0f0', weight: 1, color: '#666', fillOpacity: 0.7 };
+}
+
+function highlightFeature(e) {
+  e.target.setStyle({ weight: 2, color: '#000', fillColor: '#003366', fillOpacity: 0.9 });
+}
+
+function resetHighlight(e) {
+  geojson.resetStyle(e.target);
+}
 	
-	input.addEventListener("input", () => {
-	  const value = input.value.trim().toLowerCase();
-	  suggestions.innerHTML = "";
-	
-	  if (value) {
-	    const filtered = locations.filter(location =>
-	      location.toLowerCase().includes(value)
-	    );
-	
-	    if (filtered.length > 0) {
-	      suggestions.style.display = "block"; // 리스트 보이게
-	      filtered.forEach(location => {
-	        const li = document.createElement("li");
-	        li.textContent = location;
-	        li.addEventListener("click", () => {
-	          input.value = location;
-	          suggestions.innerHTML = "";
-	          suggestions.style.display = "none"; // 선택시 숨기기
-	        });
-	        suggestions.appendChild(li);
+	let selectedLayer = null;  // 마지막 선택된 지역의 레이어
+	let selectedLabel = null;
+	let labelMarker = null;    // 현재 마우스오버 라벨
+
+	function onEachFeature(feature, layer) {
+	  layer.on({
+	    mouseover: function (e) {
+	      highlightFeature(e);
+
+	      const name = feature.properties.CTP_KOR_NM;
+	      let position = layer.getBounds().getCenter();
+
+	      if (name === "인천광역시") {
+	        const bounds = layer.getBounds();
+	        position = L.latLng(position.lat, bounds.getEast());
+	      }
+
+	      // 기존 hover 라벨 제거
+	      if (labelMarker) {
+	        map.removeLayer(labelMarker);
+	      }
+
+	      labelMarker = L.marker(position, {
+	        icon: L.divIcon({
+	          className: 'region-label',
+	          html: "<span>" + name + "</span>",
+	          iconSize: [100, 20],
+	          iconAnchor: [50, 10]
+	        }),
+	        interactive: false
 	      });
-	    } else {
-	      suggestions.style.display = "none"; // 필터 없으면 숨기기
+
+	      labelMarker.addTo(map);
+	    },
+
+	    mouseout: function (e) {
+	      if (selectedLayer !== layer && labelMarker) {
+	        map.removeLayer(labelMarker);
+	        labelMarker = null;
+	      }
+	      if (selectedLayer !== layer) {
+	        resetHighlight(e);
+	      }
+	    },
+
+	    click: function () {
+	      selectedRegion = feature.properties.CTP_KOR_NM;
+	      updateRegionView(selectedRegion);
+
+	      // 이전 선택된 레이어 초기화
+	      if (selectedLayer && selectedLayer !== layer) {
+	        geojson.resetStyle(selectedLayer);
+	      }
+
+	      // 이전 라벨 제거 (hover 또는 클릭이든)
+	      if (labelMarker) {
+	        map.removeLayer(labelMarker);
+	        labelMarker = null;
+	      }
+	      if (selectedLabel) {
+	        map.removeLayer(selectedLabel);
+	        selectedLabel = null;
+	      }
+
+	      // 현재 선택 레이어 강조
+	      highlightFeature({ target: layer });
+	      selectedLayer = layer;
+
+	      const name = feature.properties.CTP_KOR_NM;
+	      let position = layer.getBounds().getCenter();
+	      if (name === "인천광역시") {
+	        const bounds = layer.getBounds();
+	        position = L.latLng(position.lat, bounds.getEast());
+	      }
+
+	      selectedLabel = L.marker(position, {
+	        icon: L.divIcon({
+	          className: 'region-label',
+	          html: "<span>" + name + "</span>",
+	          iconSize: [100, 20],
+	          iconAnchor: [50, 10]
+	        }),
+	        interactive: false
+	      }).addTo(map);
 	    }
-	  } else {
-	    suggestions.style.display = "none"; // 입력 없으면 숨기기
-	  }
-	});
-	
-	document.addEventListener("click", (e) => {
-	  if (!e.target.closest(".search-box")) {
-	    suggestions.innerHTML = "";
-	    suggestions.style.display = "none";
-	  }
-	});
+	  });
+	}
 
+
+function convertLatLngToGrid(lat, lng) {
+  const RE = 6371.00877, GRID = 5.0, SLAT1 = 30.0, SLAT2 = 60.0, OLNG = 126.0, OLAT = 38.0, XO = 43, YO = 136;
+  const DEGRAD = Math.PI / 180.0;
+  const re = RE / GRID;
+  const slat1 = SLAT1 * DEGRAD;
+  const slat2 = SLAT2 * DEGRAD;
+  const olng = OLNG * DEGRAD;
+  const olat = OLAT * DEGRAD;
+  const sn = Math.log(Math.cos(slat1) / Math.cos(slat2)) /
+             Math.log(Math.tan(Math.PI * 0.25 + slat2 * 0.5) / Math.tan(Math.PI * 0.25 + slat1 * 0.5));
+  const sf = Math.pow(Math.tan(Math.PI * 0.25 + slat1 * 0.5), sn) * Math.cos(slat1) / sn;
+  const ro = re * sf / Math.pow(Math.tan(Math.PI * 0.25 + olat * 0.5), sn);
+
+  const ra = re * sf / Math.pow(Math.tan(Math.PI * 0.25 + lat * DEGRAD * 0.5), sn);
+  let theta = lng * DEGRAD - olng;
+  if (theta > Math.PI) theta -= 2.0 * Math.PI;
+  if (theta < -Math.PI) theta += 2.0 * Math.PI;
+  theta *= sn;
+
+  return {
+    nx: Math.floor(ra * Math.sin(theta) + XO + 0.5),
+    ny: Math.floor(ro - ra * Math.cos(theta) + YO + 0.5)
+  };
+}
+
+async function getWeather(lat, lng) {
+	  const { nx, ny } = convertLatLngToGrid(lat, lng);
+	  const today = new Date();
+	  const baseDate = today.toISOString().slice(0, 10).replace(/-/g, '');  // 오늘 날짜로 고정
+	  const baseTime = "0500";
+	  const url = "/weather/data?nx=" + nx + "&ny=" + ny + "&baseDate=" + baseDate + "&baseTime=" + baseTime;
+  console.log("날씨 요청 URL:", url);
+
+  const res = await fetch(url);
+  const text = await res.text();
+
+  try {
+    const json = JSON.parse(text);
+    return json || [];
+  } catch (e) {
+    console.error("❌ 날씨 JSON 파싱 실패:", e);
+    return [];
+  }
+}
+
+async function updateRegionView(region) {
+  const regionPlants = plantData.filter(p => p.ADD.includes(region));
+  console.log("🔍 선택한 지역:", region);
+  console.log("📍 해당 지역 발전소:", regionPlants);
+
+  if (regionPlants.length === 0) {
+    document.getElementById("predictPower").innerHTML =
+      `<div style="font-size: 18px; font-weight: bold; color: red;">⚠️ \${region} 지역의 발전소 데이터를 찾을 수 없습니다.</div>`;
+    return;
+  }
+
+  const dayIcons = document.querySelectorAll('.day-icon');
+  const dateList = Array.from(dayIcons).map(icon => icon.dataset.date);
+  let html = "";
+
+  //1번만 API 호출
+  const fullWeatherData = await getWeather(Number(regionPlants[0].lat), Number(regionPlants[0].lng), dateList[0]);
+
+  for (const dateKey of dateList) {
+    const cleanDate = dateKey.replace(/\//g, '');
+
+    // 날짜별 값 추출
+    const TMP = getValue(fullWeatherData, "TMP", cleanDate) || 20;
+    const WSD = getValue(fullWeatherData, "WSD", cleanDate) || 3;
+    const VEC = getValue(fullWeatherData, "VEC", cleanDate) || 180;
+    const PCP_raw = getValue(fullWeatherData, "PCP", cleanDate) || "0";
+    const PCP = parsePCP(PCP_raw);
+    const REH = getValue(fullWeatherData, "REH", cleanDate) || 70;
+
+    const queryParams = regionPlants.map(async plant => {
+      const query = new URLSearchParams({
+        TMP, WSD, VEC, PCP, REH,
+        CAP: plant.CAP,
+        plant: plant.PLANT,
+        lat: plant.lat,
+        lng: plant.lng
+      }).toString();
+
+      try {
+        const resp = await fetch("http://localhost:8000/predict?" + query);
+        return await resp.json();
+      } catch (error) {
+        console.error("❌ 예측 실패:", error);
+        return { plant: plant.PLANT, predicted_power: 0 };
+      }
+    });
+
+    const predictions = await Promise.all(queryParams);
+    const total = predictions.reduce((sum, p) => sum + (p.predicted_power || 0), 0);
+
+    html += `
+      <div style="margin-bottom: 15px;">
+        <div style="font-weight:bold; font-size:16px;">📅 \${region} (\${dateKey}) 총 예측 발전량: \${total.toFixed(2)} kW</div>
+        <ul>
+        \${predictions.map(p =>
+          `<li>\${p.plant}: \${p.predicted_power != null ? p.predicted_power.toFixed(2) : "예측 실패"} kW</li>`
+        ).join('')}
+      </ul>
+      </div>`;
+  }
+
+  document.getElementById("predictPower").innerHTML = html;
+
+  const latestWeatherData = await getWeather(Number(regionPlants[0].lat), Number(regionPlants[0].lng), dateList[0]);
+  updateWeatherPanel(latestWeatherData);
+  updateDayIcons(latestWeatherData);
+}
+
+function updateWeatherPanel(weatherData) {
+  const TMP = weatherData.find(w => w.category === "TMP")?.fcstValue;
+  const VEC = weatherData.find(w => w.category === "VEC")?.fcstValue;
+  const REH = weatherData.find(w => w.category === "REH")?.fcstValue;
+  if (VEC !== undefined) document.querySelector("#winddirection .wind-left").innerText = VEC +"°";
+  if (REH !== undefined) {
+    document.getElementById("humidityValue").innerText = REH+"%";
+    if (window.gauge) window.gauge.set(REH);
+  }
+}
+
+function updateDayIcons(weatherData) {
+	  document.querySelectorAll('.day-icon').forEach((el) => {
+	    const date = el.dataset.date.replace(/\//g, '');
+
+	    // 날씨값 추출
+	    const TMP = getValue(weatherData, "TMP", date) || 20;
+	    const WSD = getValue(weatherData, "WSD", date) || 3;
+	    const REH = getValue(weatherData, "REH", date) || 60;
+	    const PCP = getValue(weatherData, "PCP", date) || 0;
+	    const POP = getValue(weatherData, "POP", date) || 0;
+	    const TMX = getValue(weatherData, "TMX", date) || 28;
+	    const TMN = getValue(weatherData, "TMN", date) || 20;
+	    const VEC = getValue(weatherData, "VEC", date) || 180;
+
+	    // data-* 속성도 업데이트 (필요 시 다른 스크립트에서 활용 가능)
+	    el.dataset.tmp = TMP;
+	    el.dataset.vec = VEC;
+	    el.dataset.wsd = WSD;
+	    el.dataset.reh = REH;
+	    el.dataset.pcp = PCP;
+	    el.dataset.pop = POP;
+	    el.dataset.tmx = TMX;
+	    el.dataset.tmn = TMN;
+
+	    // 🌤 날씨 아이콘 교체
+	    const iconEl = el.querySelector('img.weather-icon');
+	    if (POP <= 33) {
+	      iconEl.src = "resources/img/sun.png";
+	    } else if (POP <= 66) {
+	      iconEl.src = "resources/img/cloudy.png";
+	    } else {
+	      iconEl.src = "resources/img/rainy.png";
+	    }
+
+	    // 🌡️ 기온 텍스트 갱신 (class="temp")
+	    const tempEl = el.querySelector('.temp');
+	    if (tempEl) tempEl.innerText = TMN+"°C / "+TMX+"°C";
+
+	    // 🌧️ 강수 텍스트 갱신 (class="rain")
+	    const rainEl = el.querySelector('.rain');
+	    if (rainEl) rainEl.innerText = "강수확률: "+POP+"%";
+
+	    // 💨 풍속 텍스트 갱신 (class="windspeed")
+	    const windEl = el.querySelector('.windspeed');
+	    if (windEl) windEl.innerText = "풍속: "+WSD+" m/s";
+	  });
+	}
+
+
+window.onload = function () {
+  const opts = {
+    angle: 0, lineWidth: 0.32, radiusScale: 1,
+    pointer: { length: 0.6, strokeWidth: 0.03, color: '#f4f3f2' },
+    limitMax: false, limitMin: false,
+    colorStart: '#00aaff', colorStop: '#0042ff',
+    strokeColor: '#d5f4ff', generateGradient: true,
+    highDpiSupport: true,
+  };
+  const target = document.getElementById('humidityGauge');
+  window.gauge = new Gauge(target).setOptions(opts);
+  window.gauge.maxValue = 100;
+  window.gauge.setMinValue(0);
+  window.gauge.animationSpeed = 32;
+  window.gauge.set(70);
+};
+
+function getValue(arr, cat, date) {
+	  const baseDate = date.replace(/\//g, '');
+	  const filtered = arr.filter(d => d.category === cat && d.fcstDate === baseDate);
+	  const preferredTime = "1500";
+	  const preferred = filtered.find(d => d.fcstTime === preferredTime);
+	  return preferred?.fcstValue || filtered[0]?.fcstValue || null;
+	}
 </script>
-
 </body>
 </html>

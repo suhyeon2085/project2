@@ -17,6 +17,7 @@ import java.util.List;
 import javax.servlet.ServletContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Controller;
@@ -46,8 +47,8 @@ public class WeatherController {
         try {
             String baseDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
             String baseTime = "0500"; // 정적 시간 설정 (예시: 새벽 5시)
-            String nx = "60";
-            String ny = "127";
+            String nx = "51";
+            String ny = "120";
 
             String url = API_URL
                     + "?serviceKey=" + SERVICE_KEY
@@ -80,18 +81,22 @@ public class WeatherController {
         return "weather";
     }
 
-    // 클라이언트에서 nx, ny, baseTime을 받아 날씨 JSON 데이터를 반환 (JS에서 fetch용)
-    @GetMapping("/weather/data")
+    // 클라이언트에서 nx, ny, baseTime을 받아 날씨 JSON 데이터를 반환 (JS에서 fetch용)    
+    @GetMapping(value = "/weather/data", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public List<WeatherData> getWeatherByCoords(
             @RequestParam("nx") int nx,
             @RequestParam("ny") int ny,
+            @RequestParam("baseDate") String baseDate,  // 👈 추가됨!
             @RequestParam("baseTime") String baseTime
     ) {
+        System.out.println("nx : " + nx);
+        System.out.println("ny : " + ny);
+        System.out.println("baseDate : " + baseDate);
+        System.out.println("baseTime : " + baseTime);
+
         List<WeatherData> weather = new ArrayList<>();
         try {
-            String baseDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-
             String url = API_URL
                     + "?serviceKey=" + SERVICE_KEY
                     + "&pageNo=1"
@@ -101,6 +106,7 @@ public class WeatherController {
                     + "&nx=" + nx
                     + "&ny=" + ny
                     + "&dataType=json";
+            System.out.println("💬 날씨 API 요청 URL: " + url);
 
             RestTemplate rt = new RestTemplate();
             rt.getMessageConverters().add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
@@ -121,6 +127,8 @@ public class WeatherController {
 
         return weather;
     }
+
+
     
     //날짜 위도(lat), 경도(lng) 데이터를 갖고와서 json으로 변환시키는 컨트롤러
     @GetMapping("/weather/region")
