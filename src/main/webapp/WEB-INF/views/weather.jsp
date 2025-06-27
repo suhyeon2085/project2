@@ -99,7 +99,7 @@ request.setAttribute("todayVEC", windVec);
 * { box-sizing: border-box; }
 	
 	body {
-	  background-color: #474747;
+	  background-color: #003366;
 	  font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
 	  margin: 0;
 	  padding: 0;
@@ -110,7 +110,7 @@ request.setAttribute("todayVEC", windVec);
 	  display: flex;
 	  flex-direction: column;
 	  align-items: center;
-	  background-color: #595959;
+	  background-color: rgba(240,240,240,0.6);
 	  border-radius: 10px;
 	  padding: 10px 0;
 	  width: 70px;
@@ -144,7 +144,7 @@ request.setAttribute("todayVEC", windVec);
 	}
 	
 	#korea {
-	  background-color: #595959;
+	  /*background-color: rgba(255,255,255,0.6);*/
 	  padding: 0;
 	  text-align: center;
 	  border-radius: 10px;
@@ -161,8 +161,12 @@ request.setAttribute("todayVEC", windVec);
 	  transition: all 0.3s ease;
 	}
 	
-	#weather {
-	  background: linear-gradient(45deg, #6799FF, white);
+	.leaflet-container {
+    	background: rgba(240,240,240,0.6) !important;
+	}
+	
+	#weather, .power-chart {
+	  background: rgba(240,240,240,0.6);
 	  padding: 10px;
 	  border-radius: 10px;
 	  height: 100%;
@@ -173,7 +177,7 @@ request.setAttribute("todayVEC", windVec);
 	}
 	
 	.weather-title {
-	  color: white;
+	  color: #003366;
 	  font-size: 35px;
 	  font-weight: bold;
 	  margin: 10px 10px 0 10px;
@@ -199,7 +203,7 @@ request.setAttribute("todayVEC", windVec);
 	  flex: auto;
 	  width: 190px;
 	  height: 300px;
-	  background-color: rgba(255, 255, 255, 0.85);
+	  background-color: rgba(240,240,240,0.6);
 	  border-radius: 8px;
 	  padding: 15px;
 	  display: flex;
@@ -230,8 +234,8 @@ request.setAttribute("todayVEC", windVec);
 	  gap: 10px;
 	  height: 100%;
 	}
-	.info-box {
-	  background-color: #595959;
+	.info-box, #notice {
+	  background-color: rgba(240,240,240,0.6);
 	  padding: 5px 5px;
 	  border-radius: 10px;
 	  color: white;
@@ -239,12 +243,16 @@ request.setAttribute("todayVEC", windVec);
 	  flex: 1;
 	}
 	.power-chart {
-	  background-color: #595959;
-	  padding: 10px;
-	  border-radius: 10px;
-	  color: white;
+	  height: auto;
+	  color: #003366;
 	  font-size: 14px;
-	  height: 500px;
+
+	}
+	#notice{
+	  padding: 10px;
+	  color: #003366;
+	  font-size: 14px;
+	  height: auto;
 	}
 	
 	/* 습도 css*/
@@ -328,6 +336,7 @@ request.setAttribute("todayVEC", windVec);
 	  color: white;
 	  margin: 10px 20px;
 	  font-size: 30px;
+	  font-weight: bold;
 	}
 	
 	.search-box {
@@ -411,6 +420,9 @@ request.setAttribute("todayVEC", windVec);
 	  border: 1px solid #ccc;
 	  max-width: none; 
 	}
+	#explain{
+	  font-size: 14px;
+	}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
@@ -429,10 +441,9 @@ request.setAttribute("todayVEC", windVec);
   <div class="header-container">
     <p class="header-title">날씨에 따라 다른 발전량 알아보기</p>
 		  <ul class="suggestions-list" id="suggestions"></ul>
-		</div>
 
-    
-  </div>
+	<p id="explain">발전량(kW) 예측은 <span style="font-weight: bold;">'온도/풍속/풍향/강수량/습도/설비용량(MW)'</span>으로 이뤄집니다.</p>  
+	</div>
 </header>
 
 
@@ -442,8 +453,8 @@ request.setAttribute("todayVEC", windVec);
   <!-- 좌측: 메뉴 -->
   <div id="title">
     <div><a href="weather"><img src="resources/img/weather.png" alt="현재 목록"></a></div>
-    <div><a href="windpower"><img src="resources/img/power.png" alt="이전 목록"></a></div>
-    <div><a href="correlation"><img src="resources/img/correlation.png" alt="상관관계 그래프 목록"></a></div>
+    <div><a href="powerChart"><img src="resources/img/power.png" alt="이전 목록"></a></div>
+    <div><a href="windspeed"><img src="resources/img/correlation.png" alt="상관관계 그래프 목록"></a></div>
   </div>
 
   <!-- 지도 영역 -->
@@ -523,10 +534,18 @@ request.setAttribute("todayVEC", windVec);
     </div>
 
     <!-- 예측 발전량 -->
-    <div class="power-chart" id="predictPower">
-	  <div style="font-weight:bold; font-size:16px;">예측 발전량</div>
-  	  <canvas id="powerChart" style="width: 100%; height: 350px;"></canvas>
-	</div>
+    <div id="bottom" style="display: flex; flex: 1; gap: 10px;">
+	    <div class="power-chart" id="predictPower" style="flex: 2;">
+		  <div style="font-weight:bold; font-size:16px;">예측 발전량</div>
+	  	  <canvas id="powerChart" style="width: 100%; height: 350px;"></canvas>
+		</div>
+		<div id="notice" style="flex: 1;">
+		  <div style="font-weight:bold; font-size:16px;">⚠️ 오늘 체크가 필요한 발전소(발전량: 0kW 예측)</div>
+	  	  <div id=noticeContent style="display: flex; flex-wrap: wrap; gap: 6px;">
+	  	  
+	  	  </div>
+	    </div>
+	  </div>
   </div>
 </div>
 
@@ -545,9 +564,9 @@ function parsePCP(value) {
 	}
 
 const map = L.map('map').setView([36.0, 127.7], 7);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+/*L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; CARTO', subdomains: 'abcd', maxZoom: 18
-}).addTo(map);
+}).addTo(map);*/
 
 window.addEventListener('DOMContentLoaded', async () => {
   const sidoData = await fetch('resources/Data/SIDO_MAP_2022.json').then(r => r.json());
@@ -565,7 +584,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 
 function style(feature) {
-  return { fillColor: '#f0f0f0', weight: 1, color: '#666', fillOpacity: 0.7 };
+  return { fillColor: '#f0f0f0', weight: 1, color: 'gray', fillOpacity: 0.7 };
 }
 
 function highlightFeature(e) {
@@ -655,8 +674,8 @@ function resetHighlight(e) {
 	        icon: L.divIcon({
 	          className: 'region-label',
 	          html: "<span>" + name + "</span>",
-	          iconSize: [100, 20],
-	          iconAnchor: [50, 10]
+	          iconSize: [160, 24],       // 너비 충분히 확보
+	          iconAnchor: [80, 12]       // 가운데 정렬
 	        }),
 	        interactive: false
 	      }).addTo(map);
@@ -779,13 +798,22 @@ async function updateRegionView(region) {
 	    //tooltip: `총 예측 발전량: \${total.toFixed(2)} kW\n` + 
 	    	//predictions.map(p => `\${p.plant}: \${p.predicted_power.toFixed(2)} kW`).join('\n')
     });
-  }
+ 	
+    // 👇 오늘 날짜의 0kW 발전소를 체크
+    if (dateKey === dateList[0]) {
+      const zeroPowerPlants = predictions.filter(p => (p.predicted_power || 0) === 0);
+      const noticeHtml = zeroPowerPlants.length > 0
+        ? `<ul style="margin-top:10px; font-size:16px;">\${zeroPowerPlants.map(p => `<li>\${p.plant}</li>`).join('')}</ul>`
+        : `<div style="margin-top:16px; color:#003366;">모든 발전소가 정상 예측 중입니다.</div>`;
+
+      document.getElementById("noticeContent").innerHTML = noticeHtml;
+  }}
   const latestWeatherData = await getWeather(Number(regionPlants[0].lat), Number(regionPlants[0].lng), dateList[0]);
   updateWeatherPanel(latestWeatherData);
   updateDayIcons(latestWeatherData);
 
   document.getElementById("predictPower").innerHTML =
-	  `<div style="font-weight:bold; font-size:16px; margin-bottom:30px;">📅 \${region} 예측 발전량</div>
+	  `<div style="font-weight:bold; font-size:16px; margin-bottom:20px;">📅 \${region} 예측 발전량</div>
 	   <canvas id="powerChart" style="width:100%; height: 350px;"></canvas>`;
 
 

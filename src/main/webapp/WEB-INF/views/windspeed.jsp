@@ -10,7 +10,7 @@
 <title>기온과 발전량의 상관관계 그래프</title>
 <style>
 body{
-	background-color: #474747;
+	background-color: #003366;
 	display: flex;
 	font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
 }
@@ -20,7 +20,7 @@ body{
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	background-color: #595959;
+	background-color: rgba(240,240,240,0.6);
 	border-radius: 10px;
 	padding: 10px 5px;
 	width: 70px;
@@ -53,14 +53,22 @@ body{
 	transform: translateY(-5px);
 	transition: all 0.3s ease;
 }
-
+#contain{
+	background-color: rgba(240,240,240,0.6);
+	width:100%;
+	border-radius: 10px;
+	padding: 10px;
+	margin-left: 10px;
+	margin-top:30px;
+}
 #sun{
 	background-color: #595959;
 	width:100%;
 	border-radius: 10px;
-	padding: 10px 10px;
-	margin-left: 10px;
-	margin-top: 30px;
+	padding: 10px;
+	/*margin-left: 10px;
+	margin-top: 30px;*/
+	box-sizing: border-box;
 }
 p{
 	color: white;
@@ -97,6 +105,7 @@ p{
 }
 
 
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
@@ -106,12 +115,13 @@ p{
 <body>
 	<div id="title">
 		<div><a href="weather"><img src="resources/img/weather.png" alt="현재 목록"></a></div>
-		<div><img src="resources/img/power.png" alt="이전 목록"></div>
+		<div><a href="powerChart"><img src="resources/img/power.png" alt="이전 목록"></a></div>
 		<div><a href="correlation"><img src="resources/img/correlation.png" alt="상관관계 그래프 목록"></a></div>
 	</div>
 	
 	
 	<!-- 기온 발전량 그래프 -->
+	<div id="contain">
 	<div id="sun">
 		<div style="display: flex; justify-content: space-between; align-items: center;">
 		  <p style="margin: 0;">풍속과 발전량 그래프</p>
@@ -129,7 +139,7 @@ p{
 		    <canvas id="windVsPowerScatter" width="300" height="65" style="margin-top:10px;"></canvas>
 		</div>
 	
-	
+	</div>
 	</div>
 
 <script>

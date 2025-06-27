@@ -9,12 +9,51 @@
             font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
             margin: 0;
             padding: 20px 30px;
-            background-color: #474747;
+            background-color: #003366;
             color: white;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
+        #title {
+		  display: flex;
+		  flex-direction: column;
+		  align-items: center;
+		  background-color: rgba(240,240,240,0.6);
+		  border-radius: 10px;
+		  padding: 10px 0;
+		  width: 70px;
+		  flex-shrink: 0;
+		  height: 830px;
+		  gap: 7px;
+		  position: absolute;
+		  left: 20px;
+		  bottom: 20px
+		}
+		#title div {
+		  display: flex;
+		  justify-content: center;
+		  align-items: center;
+		  height: 70px;
+		  width: 100%;
+		}
+		#title a {
+		  display: flex;
+		  justify-content: center;
+		  align-items: center;
+		  width: 100%;
+		  height: 100%;
+		  text-decoration: none;
+		}
+		#title img {
+		  width: 50px;
+		  height: 56px;
+		  object-fit: contain;
+		}
+		#title img:hover {
+		  transform: translateY(-5px);
+		  transition: all 0.3s ease;
+		}
         h2 {
             font-size: 28px;
             font-weight: bold;
@@ -33,8 +72,8 @@
         .btn-group button {
             padding: 12px 25px;
             cursor: pointer;
-            background-color: #595959;
-            color: white;
+            background-color: rgba(240,240,240,0.6);
+            color: #003366;
             border: none;
             border-radius: 10px;
             font-weight: 600;
@@ -58,7 +97,7 @@
             box-sizing: border-box;
         }
         .chart-box {
-            background-color: #595959;
+            background-color: rgba(240,240,240,0.6);
             border-radius: 10px;
             padding: 25px 20px 20px 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -92,7 +131,7 @@
             margin-bottom: 15px;
             font-weight: 700;
             font-size: 20px;
-            color: #e3e3e3;
+            color: #003366;
             user-select: none;
         }
         canvas {
@@ -107,6 +146,14 @@
     </style>
 </head>
 <body>
+<div style="display: flex; justify-content: center; gap:10px position: relative;">
+<div id="title">
+    <div><a href="weather"><img src="resources/img/weather.png" alt="현재 목록"></a></div>
+    <div><a href="powerChart"><img src="resources/img/power.png" alt="이전 목록"></a></div>
+    <div><a href="windspeed"><img src="resources/img/correlation.png" alt="상관관계 그래프 목록"></a></div>
+  </div>
+  <div>
+  	<div>
     <h2>풍력 발전량 비교 대시보드</h2>
 
     <div class="btn-group">
@@ -115,7 +162,9 @@
         <button onclick="updateAllCharts('2024')">2024년</button>
         <button onclick="updateAllCharts('2025')">2025년 (예측)</button>
     </div>
-
+    </div>
+<!-- 좌측: 메뉴 -->
+  
     <div class="chart-container">
         <div class="chart-box line-chart">
             
@@ -133,7 +182,8 @@
             </div>
         </div>
     </div>
-
+</div>
+</div>
 <script>
     // JSP에서 전달된 JSON 문자열을 JS 배열로 파싱
     const list_9997 = ${list_9997};
