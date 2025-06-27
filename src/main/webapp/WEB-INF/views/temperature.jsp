@@ -105,6 +105,63 @@ p{
     box-shadow: 0px -2px 6px #ffffff, 0px 2px 6px #b0b0b0;
     color: #444444;          
 }
+/* 툴팁이 들어갈 부모 a태그 위치 지정 */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* 툴팁 텍스트 숨기기 + 스타일 */
+.tooltip-text {
+  visibility: hidden;
+  width: max-content;
+  max-width: 300px;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+
+  /* 위치 조절 */
+  position: absolute;
+  bottom: 110%;  /* 이미지 바로 위에 뜨도록 */
+  left: 0;
+  transform: none;
+  z-index: 10;
+
+  /* 부드러운 나타남 효과 */
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none; /* 마우스 이벤트 차단 */
+}
+
+/* 화살표 추가 */
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;  /* 툴팁 박스 아래쪽 */
+  left: 14px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.75) transparent transparent transparent;
+}
+
+/* 마우스 오버 시 툴팁 보이기 */
+.tooltip-container:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+.tooltip-container:first-child .tooltip-text {
+  bottom: auto;
+  top: 110%;   /* 위가 아니라 아래에 뜨게 */
+  left: 0;
+  transform:none;
+}
+.tooltip-container:first-child .tooltip-text::after {
+  top: -6px; /* 화살표가 텍스트 위에 붙음 */
+  transform: translateX(-50%) rotate(180deg);  /* 아래 화살표를 위쪽 화살표로 돌림 */
+  border-color: transparent transparent rgba(0, 0, 0, 0.75) transparent;
+}
 
 </style> 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -114,11 +171,26 @@ p{
 </head>
 <body>
 	<div id="title">
-		<div><a href="weather"><img src="resources/img/weather.png" alt="현재 목록"></a></div>
-		<div><a href="powerChart"><img src="resources/img/power.png" alt="이전 목록"></a></div>
-		<div><a href="windspeed"><img src="resources/img/correlation.png" alt="상관관계 그래프 목록"></a></div>
-	</div>
-	
+		  <div>
+		    <a href="weather" class="tooltip-container">
+		      <img src="resources/img/1.png" alt="날씨 목록">
+		      <span class="tooltip-text">날씨에 따라 다른 발전량 알아보기</span>
+		    </a>
+		  </div>
+		  <div>
+		    <a href="powerChart" class="tooltip-container">
+		      <img src="resources/img/2.png" alt="발전량 예측 목록">
+		      <span class="tooltip-text">풍력 발전량 비교</span>
+		    </a>
+		  </div>
+		  <div>
+		    <a href="temperature" class="tooltip-container">
+		      <img src="resources/img/3.png" alt="상관관계 그래프 목록">
+		      <span class="tooltip-text">풍향과 발전량 상관관계</span>
+		    </a>
+		  </div>
+		</div>
+			
 	  
 	<!-- 기온 발전량 그래프 -->
 	<div id="contain">
@@ -177,7 +249,7 @@ p{
 		        labels: monthlyLabels,
 		        datasets: [
 		            {
-		                label: '발전량 (월 평균)',
+		                label: '발전량 없애기👆❗',
 		                data: avgPower,
 		                yAxisID: 'y',
 		                borderColor: '#3498db',
@@ -186,7 +258,7 @@ p{
 		                tension: 0.3
 		            },
 		            {
-		                label: '풍향 (월 평균)',
+		                label: '풍향 없애기👆❗',
 		                data: avgWindDir,
 		                yAxisID: 'y1',
 		                borderColor: '#f39c12',
@@ -301,7 +373,7 @@ p{
 	    data: {
 	    	 datasets: [
 	    	      {
-	    	        label: '풍향 vs 발전량',
+	    	        label: '풍향 vs 발전량 없애기👆❗',
 	    	        data: scatterData,
 	    	        backgroundColor: 'rgba(39, 174, 96, 0.7)', // 초록색 투명도 조절
 	    	        borderColor: '#27ae60',
@@ -311,7 +383,7 @@ p{
 	    	        pointHoverBackgroundColor: '#2ecc71'
 	    	      },
 	    	      {
-	    	        label: '회귀선',
+	    	        label: '회귀선 없애기👆❗',
 	    	        data: regressionLine,
 	    	        type: 'line',
 	    	        borderColor: '#e74c3c',
