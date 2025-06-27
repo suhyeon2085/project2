@@ -198,7 +198,7 @@ p{
 	<div id="sun">
 		<div style="display: flex; justify-content: space-between; align-items: center;">
 		  <p style="margin: 0;">풍속과 발전량 그래프</p>
-		  <a href="temperature" class="button-3d">풍향 바로가기</a>
+		  <!-- <a href="temperature" class="button-3d">풍향 바로가기</a> -->
 		</div>
 
 
